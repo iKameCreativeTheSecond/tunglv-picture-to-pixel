@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pixel Art Native Grid Snapper - Simple UI v27</title>
+  <title>Pixel Art Native Grid Snapper - Simple UI v37</title>
   <style>
     * { box-sizing: border-box; }
     :root {
@@ -96,6 +96,26 @@
       line-height:1.45;
       margin-top:6px;
     }
+    .toggle-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:4px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .toggle-row input[type="checkbox"] {
+      width:18px;
+      height:18px;
+      min-width:18px;
+      padding:0;
+      margin:0;
+      accent-color:var(--blue);
+    }
+    .toggle-row span {
+      font-weight:760;
+      color:#e7edf7;
+    }
     .slider-input {
       display:grid;
       grid-template-columns: 1fr 86px;
@@ -108,6 +128,9 @@
     }
     .slider-input input[type="number"] {
       text-align:center;
+    }
+    .slider-input.mini-gap {
+      margin-top:10px;
     }
     .preview-stack {
       position:relative;
@@ -140,8 +163,8 @@
       display:grid;
       grid-template-columns:34px 1fr;
       grid-template-rows:auto auto;
-      gap:8px 10px;
-      align-items:center;
+      gap:10px 10px;
+      align-items:start;
     }
     .aspect-lock {
       grid-row:1 / span 2;
@@ -172,6 +195,13 @@
     }
     .size-field {
       display:grid;
+      grid-template-columns:1fr;
+      gap:6px;
+      align-items:center;
+      min-width:0;
+    }
+    .size-top {
+      display:grid;
       grid-template-columns:64px 1fr;
       gap:8px;
       align-items:center;
@@ -181,12 +211,17 @@
       font-size:13px;
       font-weight:650;
     }
-    .size-field input {
+    .size-top input[type="number"] {
       height:32px;
       padding:6px 9px;
       border-radius:8px;
       text-align:left;
       font-variant-numeric:tabular-nums;
+    }
+    .size-field input[type="range"] {
+      height:18px;
+      padding:0;
+      margin:0;
     }
     .palette-editor {
       max-height:240px;
@@ -391,8 +426,8 @@
 <header>
   <h1>Pixel Art Native Grid Snapper</h1>
   <p>
-    Bản v27 sửa triệt để selection/hover của preview: click ra ngoài sẽ clear selection, còn rê chuột trên preview sẽ chỉ highlight tạm thời màu dưới con trỏ.
-    Cơ chế detect lưới vẫn giữ nguyên: quantize để detect → edge profile → walk cut lines → resample native pixel.
+    Bản v37 giữ cơ chế lưới v32 và thêm điều chỉnh thủ công: tăng/giảm kích thước lưới, dịch lưới X/Y trực tiếp trên khung Lưới detect.
+    Cơ chế detect lưới: quantize để detect → edge profile → căn pha lưới đều theo pixel gốc → resample native pixel, giúp preview ít bị lệch so với mẫu gốc hơn.
   </p>
 </header>
 
@@ -410,19 +445,48 @@
         <button id="aspectLockButton" class="aspect-lock active" type="button" title="Khóa tỉ lệ W/H">🔗</button>
 
         <div class="size-field">
-          <span>Width:</span>
-          <input id="targetWidth" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+          <div class="size-top">
+            <span>Width:</span>
+            <input id="targetWidth" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+          </div>
+          <input id="targetWidthRange" type="range" min="0" max="1024" step="1" value="0" />
         </div>
 
         <div class="size-field">
-          <span>Height:</span>
-          <input id="targetHeight" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+          <div class="size-top">
+            <span>Height:</span>
+            <input id="targetHeight" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+          </div>
+          <input id="targetHeightRange" type="range" min="0" max="1024" step="1" value="0" />
         </div>
       </div>
       <div class="hint">
-        Bật icon link để giữ tỉ lệ như Photoshop. <b>0 × 0</b> = auto detect.
-        Ví dụ ảnh 736×736 muốn ra 33×33 thì nhập <b>33</b> ở Width hoặc Height.
+        Có thể <b>nhập số trực tiếp</b> hoặc <b>kéo slider</b>. Bật icon link để giữ tỉ lệ như Photoshop.
+        <b>0 × 0</b> = auto detect và vẫn giữ đúng tỉ lệ ảnh gốc.
       </div>
+    </div>
+
+    <div class="control">
+      <label>Chỉnh lưới detect thủ công</label>
+      <div class="slider-input">
+        <input id="gridScaleRange" type="range" min="50" max="150" step="1" value="100" />
+        <input id="gridScale" type="number" min="50" max="150" step="1" value="100" />
+      </div>
+      <div class="hint">Kích thước ô lưới: <b>100%</b> = giữ nguyên. Tăng lên = ô lớn hơn/ít ô hơn, giảm xuống = ô nhỏ hơn/nhiều ô hơn.</div>
+
+      <div class="slider-input mini-gap">
+        <input id="gridOffsetXRange" type="range" min="-64" max="64" step="1" value="0" />
+        <input id="gridOffsetX" type="number" min="-64" max="64" step="1" value="0" />
+      </div>
+      <div class="hint">Dịch lưới ngang X theo pixel nguồn.</div>
+
+      <div class="slider-input mini-gap">
+        <input id="gridOffsetYRange" type="range" min="-64" max="64" step="1" value="0" />
+        <input id="gridOffsetY" type="number" min="-64" max="64" step="1" value="0" />
+      </div>
+      <div class="hint">Dịch lưới dọc Y theo pixel nguồn.</div>
+
+      <button id="resetGridAdjustButton" class="secondary compact-reset" type="button">Reset lưới thủ công</button>
     </div>
 
     <div class="control">
@@ -444,6 +508,16 @@
       </div>
       <div class="hint">
         Kéo hoặc nhập tay. <b>0</b> = tắt. Giá trị càng cao thì các màu gần nhau càng bị gom mạnh.
+      </div>
+    </div>
+
+    <div class="control">
+      <label class="toggle-row">
+        <input id="realtimePreviewToggle" type="checkbox" checked />
+        <span>Preview realtime</span>
+      </label>
+      <div class="hint">
+        Tự cập nhật preview khi chỉnh Width/Height, số lượng màu hoặc gộp màu. Tool có debounce nhẹ để tránh lag khi kéo thanh.
       </div>
     </div>
 
@@ -532,6 +606,10 @@ let paletteUndoStack = [];
 let paletteRedoStack = [];
 let aspectLockEnabled = true;
 let syncingTargetSize = false;
+let realtimePreviewEnabled = true;
+let realtimeTimer = null;
+let realtimePendingMode = "process";
+let baseCuts = null;
 let currentCuts = null;
 let currentPixelSize = 0;
 let currentPixelSizeX = 0;
@@ -569,16 +647,64 @@ function bindNumberAndRange(numberId, rangeId, options = {}) {
 
 bindNumberAndRange("colorCount", "colorCountRange", { min: 0, max: 72, integer: true, defaultValue: 0 });
 bindNumberAndRange("mergeStrength", "mergeStrengthRange", { min: 0, max: 120, integer: true, defaultValue: 0 });
+bindNumberAndRange("gridScale", "gridScaleRange", { min: 50, max: 150, integer: true, defaultValue: 100 });
+bindNumberAndRange("gridOffsetX", "gridOffsetXRange", { min: -64, max: 64, integer: true, defaultValue: 0 });
+bindNumberAndRange("gridOffsetY", "gridOffsetYRange", { min: -64, max: 64, integer: true, defaultValue: 0 });
 
 $("aspectLockButton").addEventListener("click", () => {
   aspectLockEnabled = !aspectLockEnabled;
   updateAspectLockButton();
   if (aspectLockEnabled) syncLinkedTargetSize("width");
+  scheduleRealtimePreview("grid");
 });
 
-$("targetWidth").addEventListener("input", () => syncLinkedTargetSize("width"));
-$("targetHeight").addEventListener("input", () => syncLinkedTargetSize("height"));
+$("targetWidth").addEventListener("input", () => {
+  syncTargetSizeUI();
+  syncLinkedTargetSize("width");
+  scheduleRealtimePreview("grid");
+});
+$("targetHeight").addEventListener("input", () => {
+  syncTargetSizeUI();
+  syncLinkedTargetSize("height");
+  scheduleRealtimePreview("grid");
+});
+$("targetWidthRange").addEventListener("input", (event) => {
+  $("targetWidth").value = event.target.value;
+  syncTargetSizeUI();
+  syncLinkedTargetSize("width");
+  scheduleRealtimePreview("grid");
+});
+$("targetHeightRange").addEventListener("input", (event) => {
+  $("targetHeight").value = event.target.value;
+  syncTargetSizeUI();
+  syncLinkedTargetSize("height");
+  scheduleRealtimePreview("grid");
+});
+$("colorCount").addEventListener("input", () => scheduleRealtimePreview("process"));
+$("colorCountRange").addEventListener("input", () => scheduleRealtimePreview("process"));
+$("mergeStrength").addEventListener("input", () => scheduleRealtimePreview("process"));
+$("mergeStrengthRange").addEventListener("input", () => scheduleRealtimePreview("process"));
+$("gridScale").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("gridScaleRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("gridOffsetX").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("gridOffsetXRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("gridOffsetY").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("gridOffsetYRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
+$("resetGridAdjustButton").addEventListener("click", () => {
+  $("gridScale").value = "100";
+  $("gridScaleRange").value = "100";
+  $("gridOffsetX").value = "0";
+  $("gridOffsetXRange").value = "0";
+  $("gridOffsetY").value = "0";
+  $("gridOffsetYRange").value = "0";
+  scheduleRealtimePreview("adjust", 40);
+});
+$("realtimePreviewToggle").addEventListener("change", (event) => {
+  realtimePreviewEnabled = event.target.checked;
+  if (realtimePreviewEnabled) scheduleRealtimePreview("grid", 40);
+});
 updateAspectLockButton();
+syncTargetSizeUI();
 
 const DEFAULTS = {
   detectColors: 16,
@@ -602,7 +728,8 @@ function readOptions() {
     fgTolerance: DEFAULTS.fgTolerance,
     pixelSizeOverride: 0,
     targetWidth: targetSize.width,
-    targetHeight: targetSize.height
+    targetHeight: targetSize.height,
+    keepSourceAspect: aspectLockEnabled
   };
 }
 
@@ -632,6 +759,7 @@ $("fileInput").addEventListener("change", (e) => {
     renderPaletteEditor(null);
     updatePaletteHistoryButtons();
     clearPreviewHoverOverlay();
+    baseCuts = null;
     currentCuts = null;
     currentPixelSize = 0;
     currentPixelSizeX = 0;
@@ -651,6 +779,7 @@ $("fileInput").addEventListener("change", (e) => {
       const th = Number($("targetHeight").value);
       if (tw > 0 || th > 0) syncLinkedTargetSize(tw > 0 ? "width" : "height");
     }
+    syncTargetSizeUI();
 
     $("status").textContent =
       `Đã load ảnh: ${img.width}×${img.height}\n` +
@@ -674,10 +803,11 @@ $("snapButton").addEventListener("click", () => {
     });
 
     quantizedImageData = result.quantized;
-    currentCuts = result.cuts;
+    baseCuts = cloneCuts(result.cuts);
+    currentCuts = applyManualGridAdjustments(baseCuts);
     currentPixelSize = result.pixelSize;
-    currentPixelSizeX = result.pixelSizeX;
-    currentPixelSizeY = result.pixelSizeY;
+    currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
+    currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
     currentBBox = result.bbox;
 
     drawGridOverlay(sourceImageData, currentCuts, currentBBox);
@@ -688,11 +818,13 @@ $("snapButton").addEventListener("click", () => {
       `Pixel size X/Y: ${result.pixelSizeX.toFixed(2)} × ${result.pixelSizeY.toFixed(2)} px\n` +
       `Normalize ratio: ${result.normalizeRatio.toFixed(3)} → output pixel 1:1\n` +
       `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
+      `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
+      `Giữ tỉ lệ ảnh gốc: ${aspectLockEnabled ? formatAspectFixInfo(result.aspectFix) : "Tắt"}\n` +
       `BBox detect: ${result.bbox.w}×${result.bbox.h} tại (${result.bbox.x}, ${result.bbox.y})\n` +
       `Step hint X/Y: ${result.stepHint.x.toFixed(2)} × ${result.stepHint.y.toFixed(2)} px\n` +
       `Số màu: ${Number($("colorCount").value) === 0 ? "giữ màu gốc" : $("colorCount").value}\n` +
       `Gộp màu gần nhau: ${mergeLabel()}\n` +
-      `Cơ chế: nếu nhập W×H, tool dùng tỉ lệ source/W và source/H để tạo đúng số ô native; nếu W×H = 0×0 thì auto detect.\n\n` +
+      `Cơ chế: nếu nhập W×H, tool tạo đúng số ô native rồi căn pha lưới theo cạnh pixel gốc; nếu W×H = 0×0 thì auto detect. Khi icon link bật, auto detect cũng được khóa theo tỉ lệ ảnh gốc.\n\n` +
       `Muốn giữ nhiều chi tiết hơn: giảm Kích thước ô nguồn một chút rồi bấm Process lại.\n` +
       `Muốn output sạch/ít ô hơn: tăng Kích thước ô nguồn một chút.`;
   }, 40);
@@ -707,10 +839,11 @@ $("processButton").addEventListener("click", () => {
   });
 
   quantizedImageData = result.quantized;
-  currentCuts = result.cuts;
+  baseCuts = cloneCuts(result.cuts);
+  currentCuts = applyManualGridAdjustments(baseCuts);
   currentPixelSize = result.pixelSize;
-  currentPixelSizeX = result.pixelSizeX;
-  currentPixelSizeY = result.pixelSizeY;
+  currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
+  currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
   currentBBox = result.bbox;
 
   drawGridOverlay(sourceImageData, currentCuts, currentBBox);
@@ -719,12 +852,12 @@ $("processButton").addEventListener("click", () => {
 
 $("downloadNativeButton").addEventListener("click", () => {
   if (!nativeImageData) return alert("Chưa có output.");
-  downloadCanvas(nativeCanvas, "pixel-snap-native-simple-v27.png");
+  downloadCanvas(nativeCanvas, "pixel-snap-native-simple-v37.png");
 });
 
 $("downloadPreviewButton").addEventListener("click", () => {
   if (!nativeImageData) return alert("Chưa có preview.");
-  downloadCanvas(previewCanvas, "pixel-snap-preview-simple-v27.png");
+  downloadCanvas(previewCanvas, "pixel-snap-preview-simple-v37.png");
 });
 
 $("resetPaletteButton").addEventListener("click", () => {
@@ -797,6 +930,17 @@ function clampMergeStrengthInput() {
   return v;
 }
 
+function syncTargetSizeUI() {
+  const w = $("targetWidth")?.value ?? "0";
+  const h = $("targetHeight")?.value ?? "0";
+
+  const wRange = $("targetWidthRange");
+  const hRange = $("targetHeightRange");
+
+  if (wRange) wRange.value = w;
+  if (hRange) hRange.value = h;
+}
+
 function updateAspectLockButton() {
   const button = $("aspectLockButton");
   if (!button) return;
@@ -852,6 +996,7 @@ function syncLinkedTargetSize(changed) {
   }
 
   syncingTargetSize = false;
+  syncTargetSizeUI();
 }
 
 function clampTargetSizeInputs() {
@@ -869,6 +1014,7 @@ function clampTargetSizeInputs() {
 
   wEl.value = String(w);
   hEl.value = String(h);
+  syncTargetSizeUI();
 
   return { width: w, height: h };
 }
@@ -895,6 +1041,140 @@ function resolveTargetSizeFromSource(src, targetWidth, targetHeight) {
   };
 }
 
+function scheduleRealtimePreview(mode = "process", delay = 220) {
+  if (!realtimePreviewEnabled || !sourceImageData) return;
+
+  if (mode === "adjust") {
+    realtimePendingMode = "adjust";
+  } else if (mode === "grid" || !currentCuts) {
+    realtimePendingMode = "grid";
+  } else if (realtimePendingMode !== "grid" && realtimePendingMode !== "adjust") {
+    realtimePendingMode = "process";
+  }
+
+  if (realtimeTimer) clearTimeout(realtimeTimer);
+
+  realtimeTimer = setTimeout(() => {
+    realtimeTimer = null;
+    runRealtimePreview();
+  }, delay);
+}
+
+function runRealtimePreview() {
+  if (!realtimePreviewEnabled || !sourceImageData) return;
+
+  try {
+    if (realtimePendingMode === "adjust" && baseCuts) {
+      updateGridFromManualAdjustments();
+      $("status").textContent =
+        `Preview realtime đã cập nhật theo chỉnh lưới\n` +
+        `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
+        `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
+        `Pixel size X/Y: ${currentPixelSizeX.toFixed(2)} × ${currentPixelSizeY.toFixed(2)} px`;
+    } else if (realtimePendingMode === "grid" || !currentCuts) {
+      const result = autoSnapGrid(sourceImageData, {
+        ...DEFAULTS,
+        ...readOptions()
+      });
+
+      quantizedImageData = result.quantized;
+      baseCuts = cloneCuts(result.cuts);
+      currentCuts = applyManualGridAdjustments(baseCuts);
+      currentPixelSize = result.pixelSize;
+      currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
+      currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
+      currentBBox = result.bbox;
+
+      drawGridOverlay(sourceImageData, currentCuts, currentBBox);
+      processWithCurrentCuts();
+
+      $("status").textContent =
+        `Preview realtime đã cập nhật\n` +
+        `Output target: ${formatTargetSizeText()}\n` +
+        `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
+        `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
+        `Giữ tỉ lệ ảnh gốc: ${aspectLockEnabled ? formatAspectFixInfo(result.aspectFix) : "Tắt"}\n` +
+        `Số màu: ${Number($("colorCount").value) === 0 ? "giữ màu gốc" : $("colorCount").value}\n` +
+        `Gộp màu gần nhau: ${mergeLabel()}`;
+    } else {
+      processWithCurrentCuts();
+      $("status").textContent =
+        `Preview realtime đã cập nhật\n` +
+        `Output native: ${nativeImageData.width}×${nativeImageData.height}\n` +
+        `Số màu: ${Number($("colorCount").value) === 0 ? "giữ màu gốc" : $("colorCount").value}\n` +
+        `Gộp màu gần nhau: ${mergeLabel()}`;
+    }
+
+    realtimePendingMode = "process";
+  } catch (error) {
+    console.error(error);
+    $("status").textContent = "Preview realtime gặp lỗi. Hãy bấm Auto Snap hoặc Process lại để cập nhật thủ công.";
+  }
+}
+
+function cloneCuts(cuts) {
+  return {
+    x: Array.from(cuts.x || []),
+    y: Array.from(cuts.y || [])
+  };
+}
+
+function clampManualGridNumber(id, min, max, fallback = 0) {
+  const el = $(id);
+  let v = Number(el.value);
+  if (!Number.isFinite(v)) v = fallback;
+  v = Math.round(Math.max(min, Math.min(max, v)));
+  el.value = String(v);
+  const range = $(id + "Range");
+  if (range) range.value = String(v);
+  return v;
+}
+
+function getManualGridAdjustments() {
+  return {
+    scale: clampManualGridNumber("gridScale", 50, 150, 100),
+    offsetX: clampManualGridNumber("gridOffsetX", -64, 64, 0),
+    offsetY: clampManualGridNumber("gridOffsetY", -64, 64, 0)
+  };
+}
+
+function applyManualGridAdjustments(cuts) {
+  if (!cuts || !sourceImageData) return cuts;
+
+  const adj = getManualGridAdjustments();
+  const factor = adj.scale / 100;
+
+  const baseW = Math.max(1, cuts.x.length - 1);
+  const baseH = Math.max(1, cuts.y.length - 1);
+
+  // Scale > 100 = ô nguồn lớn hơn = ít ô hơn.
+  // Scale < 100 = ô nguồn nhỏ hơn = nhiều ô hơn.
+  const outW = Math.max(1, Math.min(sourceImageData.width, Math.round(baseW / factor)));
+  const outH = Math.max(1, Math.min(sourceImageData.height, Math.round(baseH / factor)));
+
+  return {
+    x: makeFixedCountCuts(sourceImageData.width, outW, adj.offsetX),
+    y: makeFixedCountCuts(sourceImageData.height, outH, adj.offsetY)
+  };
+}
+
+function updateGridFromManualAdjustments() {
+  if (!sourceImageData || !baseCuts) return;
+
+  currentCuts = applyManualGridAdjustments(baseCuts);
+  currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
+  currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
+  currentPixelSize = (currentPixelSizeX + currentPixelSizeY) / 2;
+
+  drawGridOverlay(sourceImageData, currentCuts, currentBBox);
+  processWithCurrentCuts();
+}
+
+function manualGridAdjustLabel() {
+  const adj = getManualGridAdjustments();
+  return `${adj.scale}% · X ${adj.offsetX >= 0 ? "+" : ""}${adj.offsetX}px · Y ${adj.offsetY >= 0 ? "+" : ""}${adj.offsetY}px`;
+}
+
 function processWithCurrentCuts() {
   if (!currentCuts) return;
 
@@ -914,9 +1194,12 @@ function processWithCurrentCuts() {
   paletteEdits = new Map();
   paletteUndoStack = [];
   paletteRedoStack = [];
+  selectedPaletteKey = null;
+  hoveredPaletteKey = null;
   renderPaletteEditor(paletteBaseImageData);
   updatePaletteHistoryButtons();
   applyPaletteEditsAndRender();
+  drawPreviewHoverOverlay();
 
   $("previewInfo").textContent = `${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}`;
   $("overlayInfo").textContent = `${currentCuts.x.length - 1}×${currentCuts.y.length - 1}`;
@@ -924,7 +1207,10 @@ function processWithCurrentCuts() {
   $("status").textContent =
     `Output target: ${formatTargetSizeText()}\n` +
     `Pixel size X/Y: ${currentPixelSizeX.toFixed(2)} × ${currentPixelSizeY.toFixed(2)} px\n` +
+    `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
     `Native output 1:1: ${nativeImageData.width}×${nativeImageData.height}\n` +
+    `Output aspect: ${(nativeImageData.width / Math.max(1, nativeImageData.height)).toFixed(3)} / Source aspect: ${(sourceImageData.width / Math.max(1, sourceImageData.height)).toFixed(3)}\n` +
+    `Grid align: lưới đều + căn pha theo edge profile\n` +
     `Preview size: ${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}\n` +
     `Unique colors: ${countUniqueColors(nativeImageData)}\n` +
     `Color setting: ${colorCount === 0 ? "Giữ màu gốc" : colorCount}\n` +
@@ -950,6 +1236,61 @@ function mergeLabel() {
    Core v7: detect pixel size X/Y separately -> normalize output to 1:1
    ============================ */
 
+function enforceCutsSourceAspect(src, cuts) {
+  const fromW = cuts.x.length - 1;
+  const fromH = cuts.y.length - 1;
+
+  if (fromW <= 0 || fromH <= 0 || !src.width || !src.height) {
+    return { cuts, changed: false };
+  }
+
+  const desiredAspect = src.width / src.height;
+  const detectedAspect = fromW / fromH;
+
+  if (!Number.isFinite(desiredAspect) || !Number.isFinite(detectedAspect) || desiredAspect <= 0) {
+    return { cuts, changed: false };
+  }
+
+  const error = Math.abs(detectedAspect - desiredAspect) / desiredAspect;
+
+  // Small differences are normal; only correct visible distortion.
+  if (error < 0.025) {
+    return { cuts, changed: false, fromW, fromH, toW: fromW, toH: fromH, desiredAspect, detectedAspect };
+  }
+
+  let toW = fromW;
+  let toH = fromH;
+  let xCuts = cuts.x;
+  let yCuts = cuts.y;
+
+  if (detectedAspect < desiredAspect) {
+    // Output is too tall/narrow. Add horizontal native cells, keep detected Y cuts.
+    toW = Math.max(1, Math.min(1024, Math.round(fromH * desiredAspect)));
+    if (toW !== fromW) xCuts = makeProportionalCuts(src.width, toW);
+  } else {
+    // Output is too wide/short. Add vertical native cells, keep detected X cuts.
+    toH = Math.max(1, Math.min(1024, Math.round(fromW / desiredAspect)));
+    if (toH !== fromH) yCuts = makeProportionalCuts(src.height, toH);
+  }
+
+  return {
+    cuts: { x: xCuts, y: yCuts },
+    changed: toW !== fromW || toH !== fromH,
+    fromW,
+    fromH,
+    toW,
+    toH,
+    desiredAspect,
+    detectedAspect,
+    error
+  };
+}
+
+function formatAspectFixInfo(fix) {
+  if (!fix || !fix.changed) return "Không cần chỉnh";
+  return `${fix.fromW}×${fix.fromH} → ${fix.toW}×${fix.toH}`;
+}
+
 function autoSnapGrid(src, options) {
   const quantized = quantizeKMeans(src, options.detectColors, false).imageData;
   const bg = estimateBackgroundFromCorners(quantized);
@@ -962,12 +1303,13 @@ function autoSnapGrid(src, options) {
   let pixelSizeX;
   let pixelSizeY;
   let cuts;
+  let aspectFix = null;
 
   if (targetSize) {
     // User controls output size. Convert W×H directly to source cell ratio.
     pixelSizeX = src.width / targetSize.width;
     pixelSizeY = src.height / targetSize.height;
-    cuts = makeProportionalCutsFromTargetSize(src.width, src.height, targetSize.width, targetSize.height);
+    cuts = makePhaseAlignedCutsFromTargetSize(profiles, bbox, src.width, src.height, targetSize.width, targetSize.height);
   } else {
     pixelSizeX = chooseAxisPixelSize(profiles.col, 0, src.width, bbox.x, bbox.x + bbox.w, stepHint.x, options);
     pixelSizeY = chooseAxisPixelSize(profiles.row, 0, src.height, bbox.y, bbox.y + bbox.h, stepHint.y, options);
@@ -988,6 +1330,28 @@ function autoSnapGrid(src, options) {
       pixelSizeY,
       options.walkWindowRatio
     );
+
+    if (options.keepSourceAspect) {
+      aspectFix = enforceCutsSourceAspect(src, cuts);
+      if (aspectFix.changed) {
+        cuts = aspectFix.cuts;
+        pixelSizeX = src.width / Math.max(1, aspectFix.toW);
+        pixelSizeY = src.height / Math.max(1, aspectFix.toH);
+      }
+    }
+
+    // Sau khi đã xác định số ô output, dùng lưới đều có căn pha.
+    // Cách này tránh các cut-line bị snap lệch cục bộ làm preview méo so với ảnh gốc.
+    cuts = makePhaseAlignedCutsFromTargetSize(
+      profiles,
+      bbox,
+      src.width,
+      src.height,
+      cuts.x.length - 1,
+      cuts.y.length - 1
+    );
+    pixelSizeX = src.width / Math.max(1, cuts.x.length - 1);
+    pixelSizeY = src.height / Math.max(1, cuts.y.length - 1);
   }
 
   const pixelSize = (pixelSizeX + pixelSizeY) / 2;
@@ -1000,6 +1364,7 @@ function autoSnapGrid(src, options) {
     pixelSizeX,
     pixelSizeY,
     normalizeRatio: pixelSizeX / Math.max(1e-6, pixelSizeY),
+    aspectFix,
     cuts
   };
 }
@@ -1009,6 +1374,54 @@ function makeProportionalCutsFromTargetSize(sourceW, sourceH, targetW, targetH) 
     x: makeProportionalCuts(sourceW, targetW),
     y: makeProportionalCuts(sourceH, targetH)
   };
+}
+
+function makePhaseAlignedCutsFromTargetSize(profiles, bbox, sourceW, sourceH, targetW, targetH) {
+  return {
+    x: makePhaseAlignedCuts(sourceW, targetW, profiles.col, bbox.x, bbox.x + bbox.w),
+    y: makePhaseAlignedCuts(sourceH, targetH, profiles.row, bbox.y, bbox.y + bbox.h)
+  };
+}
+
+function makePhaseAlignedCuts(length, count, profile, activeStart, activeEnd) {
+  count = Math.max(1, Math.min(length, Math.round(count || 1)));
+
+  if (count <= 1) return [0, length];
+
+  const step = length / count;
+  const phaseInfo = bestPhaseScoreRange(profile, activeStart, activeEnd, step);
+  const rawLattice = activeStart + phaseInfo.phase;
+
+  // Quy đổi lattice detect được về offset của lưới toàn canvas.
+  // Giữ offset nhỏ quanh 0 để không làm méo hai mép ảnh.
+  let shift = rawLattice - Math.round(rawLattice / step) * step;
+  const maxShift = Math.max(1, Math.min(step * 0.42, 8));
+  shift = Math.max(-maxShift, Math.min(maxShift, shift));
+
+  return makeFixedCountCuts(length, count, shift);
+}
+
+function makeFixedCountCuts(length, count, shift = 0) {
+  count = Math.max(1, Math.min(length, Math.round(count || 1)));
+
+  if (count <= 1) return [0, length];
+
+  const step = length / count;
+  const cuts = new Array(count + 1);
+  cuts[0] = 0;
+  cuts[count] = length;
+
+  let prev = 0;
+  for (let i = 1; i < count; i++) {
+    const min = prev + 1;
+    const max = length - (count - i);
+    let v = Math.round(i * step + shift);
+    v = Math.max(min, Math.min(max, v));
+    cuts[i] = v;
+    prev = v;
+  }
+
+  return cuts;
 }
 
 function makeProportionalCuts(length, count) {
@@ -1846,11 +2259,9 @@ function drawPreviewHoverOverlay() {
   const h = paletteBaseImageData.height;
   const scale = DEFAULTS.previewScale;
 
-  previewHoverCtx.fillStyle = "rgba(0, 0, 0, 0.42)";
-  previewHoverCtx.fillRect(0, 0, previewHoverCanvas.width, previewHoverCanvas.height);
-
   let count = 0;
   let firstColor = null;
+  const lineW = Math.max(1, Math.floor(scale / 8));
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -1862,12 +2273,21 @@ function drawPreviewHoverOverlay() {
       const editedHex = paletteEdits.get(key);
       if (!firstColor) firstColor = editedHex || rgbToHex(d[i], d[i + 1], d[i + 2]).toUpperCase();
 
-      previewHoverCtx.clearRect(x * scale, y * scale, scale, scale);
-      previewHoverCtx.fillStyle = "rgba(255,255,255,0.18)";
-      previewHoverCtx.fillRect(x * scale, y * scale, scale, scale);
-      previewHoverCtx.strokeStyle = "rgba(255,255,255,0.92)";
-      previewHoverCtx.lineWidth = Math.max(1, Math.floor(scale / 8));
-      previewHoverCtx.strokeRect(x * scale + 0.5, y * scale + 0.5, Math.max(1, scale - 1), Math.max(1, scale - 1));
+      const px = x * scale;
+      const py = y * scale;
+
+      previewHoverCtx.fillStyle = "rgba(255,255,255,0.12)";
+      previewHoverCtx.fillRect(px, py, scale, scale);
+
+      previewHoverCtx.strokeStyle = "rgba(255,255,255,0.95)";
+      previewHoverCtx.lineWidth = lineW;
+      previewHoverCtx.strokeRect(px + 0.5, py + 0.5, Math.max(1, scale - 1), Math.max(1, scale - 1));
+
+      if (scale >= 7) {
+        previewHoverCtx.strokeStyle = "rgba(17,24,39,0.35)";
+        previewHoverCtx.lineWidth = 1;
+        previewHoverCtx.strokeRect(px + lineW + 0.5, py + lineW + 0.5, Math.max(1, scale - (lineW * 2) - 1), Math.max(1, scale - (lineW * 2) - 1));
+      }
     }
   }
 
