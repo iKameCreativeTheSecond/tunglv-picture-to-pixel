@@ -1,0 +1,2524 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pixel Art Native Grid Snapper - Simple UI v27</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg:#060b16;
+      --panel:rgba(14,24,43,.82);
+      --panel2:#0a1427;
+      --line:rgba(114,140,185,.18);
+      --line-strong:rgba(114,140,185,.28);
+      --text:#f8fafc;
+      --muted:#9fb0c7;
+      --blue:#3b82f6;
+      --blue2:#2563eb;
+      --green:#22c55e;
+      --green2:#16a34a;
+      --shadow:0 18px 50px rgba(0,0,0,.30);
+      --radius:18px;
+    }
+    body {
+      margin:0;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(34,197,94,.08), transparent 22%),
+        linear-gradient(180deg, #07101f 0%, #050a13 100%);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    header {
+      padding:20px 24px;
+      border-bottom:1px solid var(--line);
+      background:rgba(5,11,21,.72);
+      backdrop-filter:blur(14px);
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+    h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; color:var(--muted); font-size:14px; line-height:1.45; }
+    main {
+      display:grid;
+      grid-template-columns:320px 1fr;
+      gap:16px;
+      padding:16px;
+    }
+    .panel,.card {
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .panel {
+      padding:18px;
+      align-self:start;
+      position:sticky;
+      top:86px;
+    }
+    .control { margin-bottom:14px; }
+    label {
+      display:block;
+      margin-bottom:7px;
+      font-weight:760;
+      font-size:13px;
+      color:#e7edf7;
+    }
+    input,select,button {
+      width:100%;
+      border:1px solid #395077;
+      background:var(--panel2);
+      color:var(--text);
+      border-radius:10px;
+      padding:10px 11px;
+      font-size:14px;
+      outline:none;
+    }
+    button {
+      border:0;
+      font-weight:850;
+      cursor:pointer;
+      margin-top:7px;
+      background:var(--blue);
+    }
+    button:hover { background:var(--blue2); }
+    button.green { background:var(--green); }
+    button.green:hover { background:var(--green2); }
+    button.secondary { background:#334155; }
+    button.secondary:hover { background:#475569; }
+    .hint {
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+      margin-top:6px;
+    }
+    .slider-input {
+      display:grid;
+      grid-template-columns: 1fr 86px;
+      gap:10px;
+      align-items:center;
+    }
+    .slider-input input[type="range"] {
+      padding:0;
+      height:38px;
+    }
+    .slider-input input[type="number"] {
+      text-align:center;
+    }
+    .preview-stack {
+      position:relative;
+      display:inline-block;
+      max-width:100%;
+    }
+    .preview-stack canvas {
+      display:block;
+    }
+    .preview-stack .preview-overlay {
+      max-width:100%;
+    }
+    .preview-overlay {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      display:none;
+      background:transparent !important;
+      background-image:none !important;
+      border-radius:8px;
+    }
+    .compact-reset {
+      margin-top:8px;
+      min-height:36px;
+      padding:8px 12px;
+      font-size:13px;
+      border-radius:10px;
+    }
+    .size-link-box {
+      display:grid;
+      grid-template-columns:34px 1fr;
+      grid-template-rows:auto auto;
+      gap:8px 10px;
+      align-items:center;
+    }
+    .aspect-lock {
+      grid-row:1 / span 2;
+      width:28px;
+      height:64px;
+      min-width:28px;
+      padding:0;
+      margin:0;
+      border-radius:10px;
+      border:1px solid #395077;
+      background:#334155;
+      color:#dbeafe;
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .aspect-lock.active {
+      background:var(--blue);
+      color:#fff;
+      box-shadow:0 0 0 2px rgba(59,130,246,.18);
+    }
+    .aspect-lock:hover {
+      background:#475569;
+    }
+    .aspect-lock.active:hover {
+      background:var(--blue2);
+    }
+    .size-field {
+      display:grid;
+      grid-template-columns:64px 1fr;
+      gap:8px;
+      align-items:center;
+    }
+    .size-field span {
+      color:#dbeafe;
+      font-size:13px;
+      font-weight:650;
+    }
+    .size-field input {
+      height:32px;
+      padding:6px 9px;
+      border-radius:8px;
+      text-align:left;
+      font-variant-numeric:tabular-nums;
+    }
+    .palette-editor {
+      max-height:240px;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:6px;
+      border:1px solid var(--line-strong);
+      background:rgba(8,17,33,.72);
+      border-radius:14px;
+    }
+    .palette-empty {
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      padding:4px;
+    }
+    .palette-row {
+      display:grid;
+      grid-template-columns:28px 28px 40px minmax(0,1fr) 32px;
+      gap:6px;
+      align-items:center;
+      padding:6px 2px;
+      border-bottom:1px solid rgba(114,140,185,.14);
+      border-radius:8px;
+    }
+    .palette-row.selected {
+      background:rgba(59,130,246,.18);
+      outline:1px solid rgba(96,165,250,.55);
+    }
+    .palette-row > * {
+      min-width:0;
+    }
+    .palette-row:last-child { border-bottom:0; }
+    .palette-row input[type="color"] {
+      width:40px;
+      height:30px;
+      padding:2px;
+      border-radius:9px;
+    }
+    .palette-hex-input {
+      min-width:0;
+      height:32px;
+      padding:6px 8px;
+      border-radius:9px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:12px;
+      color:#dbeafe;
+      text-transform:uppercase;
+    }
+    .palette-hex-input.invalid {
+      border-color:#ef4444;
+      box-shadow:0 0 0 2px rgba(239,68,68,.16);
+    }
+    .palette-count {
+      font-size:10px;
+      color:var(--muted);
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+    }
+    .palette-reset-one {
+      width:28px;
+      height:30px;
+      min-width:28px;
+      padding:0;
+      margin:0;
+      border-radius:9px;
+      background:#334155;
+      color:#dbeafe;
+      font-size:14px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .palette-reset-one:hover {
+      background:#475569;
+    }
+    .palette-reset-one:disabled {
+      opacity:.36;
+      cursor:not-allowed;
+    }
+    .palette-lock-one {
+      width:28px;
+      height:30px;
+      min-width:28px;
+      padding:0;
+      margin:0;
+      border-radius:9px;
+      background:#334155;
+      color:#dbeafe;
+      font-size:13px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .palette-lock-one:hover { background:#475569; }
+    .palette-lock-one.active {
+      background:#7c3aed;
+      color:#fff;
+      box-shadow:0 0 0 2px rgba(124,58,237,.18);
+    }
+    .palette-tools {
+      display:grid;
+      grid-template-columns:1fr 1fr 1.2fr;
+      gap:8px;
+      margin-top:8px;
+    }
+    .palette-tools button:disabled {
+      opacity:.45;
+      cursor:not-allowed;
+    }
+    .status {
+      white-space:pre-wrap;
+      background:#081121;
+      border:1px solid #233555;
+      border-radius:10px;
+      padding:11px;
+      color:#d9e4f2;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .workspace {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:18px;
+      align-content:start;
+    }
+    .actions-bar {
+      grid-column:1 / -1;
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      padding:12px;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(14px);
+    }
+    .actions-bar button {
+      margin-top:0;
+      min-height:44px;
+      border-radius:12px;
+      white-space:nowrap;
+    }
+    .card {
+      padding:16px;
+      min-height:320px;
+      overflow:auto;
+    }
+    .card h2 {
+      margin:0 0 12px;
+      font-size:15px;
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:baseline;
+    }
+    .small {
+      color:#9fb0c7;
+      font-size:12px;
+      font-weight:550;
+    }
+    canvas {
+      max-width:100%;
+      image-rendering:pixelated;
+      image-rendering:crisp-edges;
+      border-radius:8px;
+      background-color:#9ec1d5;
+      background-image:
+        linear-gradient(45deg, rgba(255,255,255,.1) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,.1) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,.1) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.1) 75%);
+      background-size:16px 16px;
+      background-position:0 0,0 8px,8px -8px,-8px 0;
+    }
+    .native-box {
+      display:inline-block;
+      padding:10px;
+      border:1px solid #233555;
+      border-radius:10px;
+      background:#081121;
+    }
+    .native-box canvas { max-width:none; }
+    .hidden { display:none !important; }
+    @media (max-width:1280px) {
+      .workspace { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .actions-bar { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:1000px) {
+      main { grid-template-columns:1fr; }
+      .panel { position:static; }
+      .workspace { grid-template-columns:1fr; }
+      .actions-bar { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>Pixel Art Native Grid Snapper</h1>
+  <p>
+    Bản v27 sửa triệt để selection/hover của preview: click ra ngoài sẽ clear selection, còn rê chuột trên preview sẽ chỉ highlight tạm thời màu dưới con trỏ.
+    Cơ chế detect lưới vẫn giữ nguyên: quantize để detect → edge profile → walk cut lines → resample native pixel.
+  </p>
+</header>
+
+<main>
+  <aside class="panel">
+    <div class="control">
+      <label>1. Chọn ảnh</label>
+      <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+      <div class="hint">PNG / JPG / WEBP. Xử lý local trên trình duyệt.</div>
+    </div>
+
+    <div class="control">
+      <label>Kích thước output</label>
+      <div class="size-link-box">
+        <button id="aspectLockButton" class="aspect-lock active" type="button" title="Khóa tỉ lệ W/H">🔗</button>
+
+        <div class="size-field">
+          <span>Width:</span>
+          <input id="targetWidth" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+        </div>
+
+        <div class="size-field">
+          <span>Height:</span>
+          <input id="targetHeight" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+        </div>
+      </div>
+      <div class="hint">
+        Bật icon link để giữ tỉ lệ như Photoshop. <b>0 × 0</b> = auto detect.
+        Ví dụ ảnh 736×736 muốn ra 33×33 thì nhập <b>33</b> ở Width hoặc Height.
+      </div>
+    </div>
+
+    <div class="control">
+      <label>Số lượng màu</label>
+      <div class="slider-input">
+        <input id="colorCountRange" type="range" min="0" max="72" step="1" value="0" />
+        <input id="colorCount" type="number" min="0" max="72" step="1" value="0" />
+      </div>
+      <div class="hint">
+        Kéo hoặc nhập tay. <b>0</b> = giữ màu gốc. Tối đa 72 màu. Ví dụ: 12 / 24 / 48 / 72.
+      </div>
+    </div>
+
+    <div class="control">
+      <label>Gộp màu gần nhau</label>
+      <div class="slider-input">
+        <input id="mergeStrengthRange" type="range" min="0" max="60" step="1" value="0" />
+        <input id="mergeStrength" type="number" min="0" max="120" step="1" value="0" />
+      </div>
+      <div class="hint">
+        Kéo hoặc nhập tay. <b>0</b> = tắt. Giá trị càng cao thì các màu gần nhau càng bị gom mạnh.
+      </div>
+    </div>
+
+    <div class="control">
+      <label>Chỉnh màu từng màu</label>
+      <div id="paletteEditor" class="palette-editor">
+        <div class="palette-empty">Chưa có màu. Bấm Auto Snap hoặc Process lại.</div>
+      </div>
+      <div class="palette-tools">
+        <button id="paletteUndoButton" class="secondary compact-reset" type="button" disabled>Undo</button>
+        <button id="paletteRedoButton" class="secondary compact-reset" type="button" disabled>Redo</button>
+        <button id="resetPaletteButton" class="secondary compact-reset" type="button">Reset màu</button>
+      </div>
+      <div class="hint">
+        Sau khi xử lý, mỗi màu trong output sẽ xuất hiện ở đây. Click preview để chọn màu trong palette; icon khóa giúp màu đó không bị gộp khi dùng “Gộp màu gần nhau”.
+      </div>
+    </div>
+
+    <div class="control" style="margin-top:14px;">
+      <label>Kết quả</label>
+      <div id="status" class="status">Chưa có ảnh.</div>
+    </div>
+  </aside>
+
+  <section class="workspace">
+    <div class="card">
+      <h2>Ảnh gốc <span id="sourceInfo" class="small"></span></h2>
+      <canvas id="sourceCanvas"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Lưới detect <span id="overlayInfo" class="small"></span></h2>
+      <canvas id="overlayCanvas"></canvas>
+    </div>
+
+    <div class="hidden">
+      <canvas id="sourceFitCanvas"></canvas>
+      <canvas id="nativeCanvas"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Preview pixel 1:1 <span id="previewInfo" class="small"></span></h2>
+      <div class="preview-stack">
+        <canvas id="previewCanvas"></canvas>
+        <canvas id="previewHoverCanvas" class="preview-overlay"></canvas>
+      </div>
+      <div id="previewHoverInfo" class="hint">
+        Đây là preview cuối cùng để xem output pixel-perfect sau khi chuẩn hóa về pixel vuông 1:1. Rê chuột trên preview hoặc palette để highlight màu; click vào preview để chọn màu trong palette.
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button id="snapButton" class="green">2. Auto Snap</button>
+      <button id="processButton">Process lại</button>
+      <button id="downloadNativeButton" class="secondary">Download Native PNG</button>
+      <button id="downloadPreviewButton" class="secondary">Download Preview PNG</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const sourceCanvas = $("sourceCanvas");
+const overlayCanvas = $("overlayCanvas");
+const sourceFitCanvas = $("sourceFitCanvas");
+const nativeCanvas = $("nativeCanvas");
+const previewCanvas = $("previewCanvas");
+const previewHoverCanvas = $("previewHoverCanvas");
+
+const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+const overlayCtx = overlayCanvas.getContext("2d", { willReadFrequently: true });
+const nativeCtx = nativeCanvas.getContext("2d", { willReadFrequently: true });
+const previewHoverCtx = previewHoverCanvas.getContext("2d", { willReadFrequently: true });
+
+let sourceImageData = null;
+let quantizedImageData = null;
+let nativeImageData = null;
+let paletteBaseImageData = null;
+let paletteEntries = [];
+let paletteEdits = new Map();
+let lockedPaletteKeys = new Set();
+let selectedPaletteKey = null;
+let hoveredPaletteKey = null;
+let paletteUndoStack = [];
+let paletteRedoStack = [];
+let aspectLockEnabled = true;
+let syncingTargetSize = false;
+let currentCuts = null;
+let currentPixelSize = 0;
+let currentPixelSizeX = 0;
+let currentPixelSizeY = 0;
+let currentBBox = null;
+
+function bindNumberAndRange(numberId, rangeId, options = {}) {
+  const number = $(numberId);
+  const range = $(rangeId);
+
+  function clamp(value) {
+    let v = Number(value);
+    if (!Number.isFinite(v)) v = options.defaultValue ?? 0;
+    if (options.integer) v = Math.round(v);
+    if (options.min !== undefined && v < options.min) v = options.min;
+    if (options.max !== undefined && v > options.max) v = options.max;
+    return v;
+  }
+
+  function syncFromNumber() {
+    const v = clamp(number.value);
+    number.value = String(v);
+    range.value = String(Math.min(Number(range.max), Math.max(Number(range.min), v)));
+  }
+
+  function syncFromRange() {
+    const v = clamp(range.value);
+    range.value = String(v);
+    number.value = String(v);
+  }
+
+  number.addEventListener("input", syncFromNumber);
+  range.addEventListener("input", syncFromRange);
+}
+
+bindNumberAndRange("colorCount", "colorCountRange", { min: 0, max: 72, integer: true, defaultValue: 0 });
+bindNumberAndRange("mergeStrength", "mergeStrengthRange", { min: 0, max: 120, integer: true, defaultValue: 0 });
+
+$("aspectLockButton").addEventListener("click", () => {
+  aspectLockEnabled = !aspectLockEnabled;
+  updateAspectLockButton();
+  if (aspectLockEnabled) syncLinkedTargetSize("width");
+});
+
+$("targetWidth").addEventListener("input", () => syncLinkedTargetSize("width"));
+$("targetHeight").addEventListener("input", () => syncLinkedTargetSize("height"));
+updateAspectLockButton();
+
+const DEFAULTS = {
+  detectColors: 16,
+  minPixelSize: 4,
+  maxPixelSize: 64,
+  preserveTolerance: 0.14,
+  walkWindowRatio: 0.35,
+  fgTolerance: 18,
+  previewScale: 8
+};
+
+function readOptions() {
+  const targetSize = clampTargetSizeInputs();
+
+  return {
+    detectColors: DEFAULTS.detectColors,
+    minPixelSize: DEFAULTS.minPixelSize,
+    maxPixelSize: DEFAULTS.maxPixelSize,
+    preserveTolerance: DEFAULTS.preserveTolerance,
+    walkWindowRatio: DEFAULTS.walkWindowRatio,
+    fgTolerance: DEFAULTS.fgTolerance,
+    pixelSizeOverride: 0,
+    targetWidth: targetSize.width,
+    targetHeight: targetSize.height
+  };
+}
+
+$("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+
+  img.onload = () => {
+    sourceCanvas.width = img.width;
+    sourceCanvas.height = img.height;
+    sourceCtx.clearRect(0, 0, img.width, img.height);
+    sourceCtx.drawImage(img, 0, 0);
+
+    sourceImageData = sourceCtx.getImageData(0, 0, img.width, img.height);
+    quantizedImageData = null;
+    nativeImageData = null;
+    paletteBaseImageData = null;
+    paletteEntries = [];
+    paletteEdits = new Map();
+    lockedPaletteKeys = new Set();
+    selectedPaletteKey = null;
+    paletteUndoStack = [];
+    paletteRedoStack = [];
+    renderPaletteEditor(null);
+    updatePaletteHistoryButtons();
+    clearPreviewHoverOverlay();
+    currentCuts = null;
+    currentPixelSize = 0;
+    currentPixelSizeX = 0;
+    currentPixelSizeY = 0;
+    currentBBox = null;
+
+    overlayCanvas.width = img.width;
+    overlayCanvas.height = img.height;
+    overlayCtx.clearRect(0, 0, img.width, img.height);
+    overlayCtx.drawImage(img, 0, 0);
+
+    $("sourceInfo").textContent = `${img.width}×${img.height}`;
+    $("overlayInfo").textContent = "";
+    $("previewInfo").textContent = "";
+    if (aspectLockEnabled) {
+      const tw = Number($("targetWidth").value);
+      const th = Number($("targetHeight").value);
+      if (tw > 0 || th > 0) syncLinkedTargetSize(tw > 0 ? "width" : "height");
+    }
+
+    $("status").textContent =
+      `Đã load ảnh: ${img.width}×${img.height}\n` +
+      `Bấm Auto Snap để tự tính kích thước pixel và output native.`;
+
+    URL.revokeObjectURL(url);
+  };
+
+  img.src = url;
+});
+
+$("snapButton").addEventListener("click", () => {
+  if (!sourceImageData) return alert("Hãy chọn ảnh trước.");
+
+  $("status").textContent = "Đang tạo lưới theo W×H hoặc auto detect...";
+
+  setTimeout(() => {
+    const result = autoSnapGrid(sourceImageData, {
+      ...DEFAULTS,
+      ...readOptions()
+    });
+
+    quantizedImageData = result.quantized;
+    currentCuts = result.cuts;
+    currentPixelSize = result.pixelSize;
+    currentPixelSizeX = result.pixelSizeX;
+    currentPixelSizeY = result.pixelSizeY;
+    currentBBox = result.bbox;
+
+    drawGridOverlay(sourceImageData, currentCuts, currentBBox);
+    processWithCurrentCuts();
+
+    $("status").textContent =
+      `Output target: ${formatTargetSizeText()}\n` +
+      `Pixel size X/Y: ${result.pixelSizeX.toFixed(2)} × ${result.pixelSizeY.toFixed(2)} px\n` +
+      `Normalize ratio: ${result.normalizeRatio.toFixed(3)} → output pixel 1:1\n` +
+      `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
+      `BBox detect: ${result.bbox.w}×${result.bbox.h} tại (${result.bbox.x}, ${result.bbox.y})\n` +
+      `Step hint X/Y: ${result.stepHint.x.toFixed(2)} × ${result.stepHint.y.toFixed(2)} px\n` +
+      `Số màu: ${Number($("colorCount").value) === 0 ? "giữ màu gốc" : $("colorCount").value}\n` +
+      `Gộp màu gần nhau: ${mergeLabel()}\n` +
+      `Cơ chế: nếu nhập W×H, tool dùng tỉ lệ source/W và source/H để tạo đúng số ô native; nếu W×H = 0×0 thì auto detect.\n\n` +
+      `Muốn giữ nhiều chi tiết hơn: giảm Kích thước ô nguồn một chút rồi bấm Process lại.\n` +
+      `Muốn output sạch/ít ô hơn: tăng Kích thước ô nguồn một chút.`;
+  }, 40);
+});
+
+$("processButton").addEventListener("click", () => {
+  if (!sourceImageData) return alert("Hãy chọn ảnh trước.");
+
+  const result = autoSnapGrid(sourceImageData, {
+    ...DEFAULTS,
+    ...readOptions()
+  });
+
+  quantizedImageData = result.quantized;
+  currentCuts = result.cuts;
+  currentPixelSize = result.pixelSize;
+  currentPixelSizeX = result.pixelSizeX;
+  currentPixelSizeY = result.pixelSizeY;
+  currentBBox = result.bbox;
+
+  drawGridOverlay(sourceImageData, currentCuts, currentBBox);
+  processWithCurrentCuts();
+});
+
+$("downloadNativeButton").addEventListener("click", () => {
+  if (!nativeImageData) return alert("Chưa có output.");
+  downloadCanvas(nativeCanvas, "pixel-snap-native-simple-v27.png");
+});
+
+$("downloadPreviewButton").addEventListener("click", () => {
+  if (!nativeImageData) return alert("Chưa có preview.");
+  downloadCanvas(previewCanvas, "pixel-snap-preview-simple-v27.png");
+});
+
+$("resetPaletteButton").addEventListener("click", () => {
+  if (!paletteBaseImageData) return;
+  pushPaletteHistory();
+  paletteEdits = new Map();
+  renderPaletteEditor(paletteBaseImageData);
+  applyPaletteEditsAndRender();
+  clearPreviewHoverOverlay();
+});
+
+$("paletteUndoButton").addEventListener("click", undoPaletteChange);
+$("paletteRedoButton").addEventListener("click", redoPaletteChange);
+
+previewCanvas.addEventListener("mousemove", (event) => {
+  const key = getPaletteKeyFromPreviewEvent(event);
+  if (key) {
+    setHoveredPaletteKey(key);
+  } else {
+    clearPreviewHoverOverlay();
+  }
+});
+
+previewCanvas.addEventListener("mouseleave", () => {
+  clearPreviewHoverOverlay();
+});
+
+previewCanvas.addEventListener("click", (event) => {
+  const key = getPaletteKeyFromPreviewEvent(event);
+  if (!key) return;
+  selectPaletteKey(key, true);
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const target = event.target;
+
+  if (
+    target.closest("#paletteEditor") ||
+    target.closest(".preview-stack")
+  ) {
+    return;
+  }
+
+  if (selectedPaletteKey || hoveredPaletteKey) {
+    clearPaletteSelection();
+  }
+}, true);
+
+function clampColorCountInput() {
+  const el = $("colorCount");
+  let v = Number(el.value);
+  if (!Number.isFinite(v) || v < 0) v = 0;
+  v = Math.round(v);
+  if (v > 72) v = 72;
+  el.value = String(v);
+  const range = $("colorCountRange");
+  if (range) range.value = String(Math.min(Number(range.max), Math.max(Number(range.min), v)));
+  return v;
+}
+
+function clampMergeStrengthInput() {
+  const el = $("mergeStrength");
+  let v = Number(el.value);
+  if (!Number.isFinite(v) || v < 0) v = 0;
+  v = Math.round(v);
+  if (v > 120) v = 120;
+  el.value = String(v);
+  const range = $("mergeStrengthRange");
+  if (range) range.value = String(Math.min(Number(range.max), Math.max(Number(range.min), v)));
+  return v;
+}
+
+function updateAspectLockButton() {
+  const button = $("aspectLockButton");
+  if (!button) return;
+  button.classList.toggle("active", aspectLockEnabled);
+  button.textContent = aspectLockEnabled ? "🔗" : "⛓";
+  button.title = aspectLockEnabled ? "Đang khóa tỉ lệ W/H" : "Đang bỏ khóa tỉ lệ W/H";
+}
+
+function getTargetAspectRatio() {
+  if (sourceImageData && sourceImageData.width && sourceImageData.height) {
+    return sourceImageData.width / sourceImageData.height;
+  }
+
+  const w = Number($("targetWidth").value);
+  const h = Number($("targetHeight").value);
+
+  if (w > 0 && h > 0) return w / h;
+  return 1;
+}
+
+function syncLinkedTargetSize(changed) {
+  if (!aspectLockEnabled || syncingTargetSize) return;
+
+  const wEl = $("targetWidth");
+  const hEl = $("targetHeight");
+  let w = Number(wEl.value);
+  let h = Number(hEl.value);
+
+  if (!Number.isFinite(w) || w < 0) w = 0;
+  if (!Number.isFinite(h) || h < 0) h = 0;
+
+  const aspect = getTargetAspectRatio();
+  if (!aspect || !Number.isFinite(aspect)) return;
+
+  syncingTargetSize = true;
+
+  if (changed === "width") {
+    w = Math.min(1024, Math.round(w));
+    if (w > 0) {
+      h = Math.max(1, Math.min(1024, Math.round(w / aspect)));
+      hEl.value = String(h);
+    } else {
+      hEl.value = "0";
+    }
+  } else {
+    h = Math.min(1024, Math.round(h));
+    if (h > 0) {
+      w = Math.max(1, Math.min(1024, Math.round(h * aspect)));
+      wEl.value = String(w);
+    } else {
+      wEl.value = "0";
+    }
+  }
+
+  syncingTargetSize = false;
+}
+
+function clampTargetSizeInputs() {
+  const wEl = $("targetWidth");
+  const hEl = $("targetHeight");
+
+  let w = Number(wEl.value);
+  let h = Number(hEl.value);
+
+  if (!Number.isFinite(w) || w < 0) w = 0;
+  if (!Number.isFinite(h) || h < 0) h = 0;
+
+  w = Math.min(1024, Math.round(w));
+  h = Math.min(1024, Math.round(h));
+
+  wEl.value = String(w);
+  hEl.value = String(h);
+
+  return { width: w, height: h };
+}
+
+function formatTargetSizeText() {
+  const { width, height } = clampTargetSizeInputs();
+  if (!width && !height) return "Auto";
+  if (width && height) return `${width}×${height}`;
+  if (width) return `${width}×auto`;
+  return `auto×${height}`;
+}
+
+function resolveTargetSizeFromSource(src, targetWidth, targetHeight) {
+  let w = targetWidth;
+  let h = targetHeight;
+
+  if (!w && !h) return null;
+  if (w && !h) h = Math.max(1, Math.round(src.height * (w / src.width)));
+  if (!w && h) w = Math.max(1, Math.round(src.width * (h / src.height)));
+
+  return {
+    width: Math.max(1, Math.round(w)),
+    height: Math.max(1, Math.round(h))
+  };
+}
+
+function processWithCurrentCuts() {
+  if (!currentCuts) return;
+
+  let img = resampleByCuts(sourceImageData, currentCuts.x, currentCuts.y, "centerDominant");
+
+  const colorCount = clampColorCountInput();
+  if (colorCount > 0) {
+    img = quantizeKMeans(img, colorCount, true).imageData;
+  }
+
+  const mergeDistance = clampMergeStrengthInput();
+  if (mergeDistance > 0) {
+    img = mergeSimilarColors(img, mergeDistance, lockedPaletteKeys);
+  }
+
+  paletteBaseImageData = cloneImageData(img);
+  paletteEdits = new Map();
+  paletteUndoStack = [];
+  paletteRedoStack = [];
+  renderPaletteEditor(paletteBaseImageData);
+  updatePaletteHistoryButtons();
+  applyPaletteEditsAndRender();
+
+  $("previewInfo").textContent = `${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}`;
+  $("overlayInfo").textContent = `${currentCuts.x.length - 1}×${currentCuts.y.length - 1}`;
+
+  $("status").textContent =
+    `Output target: ${formatTargetSizeText()}\n` +
+    `Pixel size X/Y: ${currentPixelSizeX.toFixed(2)} × ${currentPixelSizeY.toFixed(2)} px\n` +
+    `Native output 1:1: ${nativeImageData.width}×${nativeImageData.height}\n` +
+    `Preview size: ${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}\n` +
+    `Unique colors: ${countUniqueColors(nativeImageData)}\n` +
+    `Color setting: ${colorCount === 0 ? "Giữ màu gốc" : colorCount}\n` +
+    `Merge similar colors: ${mergeLabel()}\n` +
+    `Editable palette colors: ${paletteEntries.length}\n` +
+    `Locked colors for merge: ${lockedPaletteKeys.size}\n\n` +
+    `Tip:\n` +
+    `- Mất chi tiết → tăng W×H rồi Process lại.\n` +
+    `- Màu quá rối → tăng mức gộp màu gần nhau.\n` +
+    `- Quá nhiều ô/noise → giảm W×H hoặc giảm số màu.`;
+}
+
+function mergeLabel() {
+  const v = Number($("mergeStrength").value);
+  if (!v) return "Tắt";
+  if (v <= 10) return `Nhẹ (${v})`;
+  if (v <= 20) return `Vừa (${v})`;
+  if (v <= 35) return `Mạnh (${v})`;
+  return `Rất mạnh (${v})`;
+}
+
+/* ============================
+   Core v7: detect pixel size X/Y separately -> normalize output to 1:1
+   ============================ */
+
+function autoSnapGrid(src, options) {
+  const quantized = quantizeKMeans(src, options.detectColors, false).imageData;
+  const bg = estimateBackgroundFromCorners(quantized);
+  const bbox = detectForegroundBBox(quantized, bg, options.fgTolerance);
+  const profiles = computeProfiles(quantized, bbox);
+  const stepHint = estimatePixelSizeHintsXY(quantized, profiles, bbox, options);
+
+  const targetSize = resolveTargetSizeFromSource(src, options.targetWidth || 0, options.targetHeight || 0);
+
+  let pixelSizeX;
+  let pixelSizeY;
+  let cuts;
+
+  if (targetSize) {
+    // User controls output size. Convert W×H directly to source cell ratio.
+    pixelSizeX = src.width / targetSize.width;
+    pixelSizeY = src.height / targetSize.height;
+    cuts = makeProportionalCutsFromTargetSize(src.width, src.height, targetSize.width, targetSize.height);
+  } else {
+    pixelSizeX = chooseAxisPixelSize(profiles.col, 0, src.width, bbox.x, bbox.x + bbox.w, stepHint.x, options);
+    pixelSizeY = chooseAxisPixelSize(profiles.row, 0, src.height, bbox.y, bbox.y + bbox.h, stepHint.y, options);
+
+    const ratio = pixelSizeX / Math.max(1e-6, pixelSizeY);
+    if (ratio > 0.94 && ratio < 1.06) {
+      const avg = (pixelSizeX + pixelSizeY) / 2;
+      pixelSizeX = avg;
+      pixelSizeY = avg;
+    }
+
+    cuts = makeCutsFromPixelSizeXY(
+      profiles,
+      bbox,
+      src.width,
+      src.height,
+      pixelSizeX,
+      pixelSizeY,
+      options.walkWindowRatio
+    );
+  }
+
+  const pixelSize = (pixelSizeX + pixelSizeY) / 2;
+
+  return {
+    quantized,
+    bbox,
+    stepHint,
+    pixelSize,
+    pixelSizeX,
+    pixelSizeY,
+    normalizeRatio: pixelSizeX / Math.max(1e-6, pixelSizeY),
+    cuts
+  };
+}
+
+function makeProportionalCutsFromTargetSize(sourceW, sourceH, targetW, targetH) {
+  return {
+    x: makeProportionalCuts(sourceW, targetW),
+    y: makeProportionalCuts(sourceH, targetH)
+  };
+}
+
+function makeProportionalCuts(length, count) {
+  const cuts = new Array(count + 1);
+  cuts[0] = 0;
+
+  for (let i = 1; i < count; i++) {
+    cuts[i] = Math.round(i * length / count);
+  }
+
+  cuts[count] = length;
+  return sanitizeCutsRange(cuts, 0, length);
+}
+
+function estimatePixelSizeHintsXY(imageData, profiles, bbox, options) {
+  const minPx = Math.max(2, options.minPixelSize || 4);
+  const maxPx = Math.max(minPx + 1, options.maxPixelSize || 64);
+
+  const xValues = [
+    runLengthPeriodEstimateAxis(imageData, bbox, "x", minPx, maxPx),
+    peakDistanceEstimate(profiles.col, bbox.x, bbox.x + bbox.w, minPx, maxPx),
+    autocorrelationEstimate(profiles.col, bbox.x, bbox.x + bbox.w, minPx, maxPx)
+  ].filter(v => Number.isFinite(v) && v >= minPx && v <= maxPx);
+
+  const yValues = [
+    runLengthPeriodEstimateAxis(imageData, bbox, "y", minPx, maxPx),
+    peakDistanceEstimate(profiles.row, bbox.y, bbox.y + bbox.h, minPx, maxPx),
+    autocorrelationEstimate(profiles.row, bbox.y, bbox.y + bbox.h, minPx, maxPx)
+  ].filter(v => Number.isFinite(v) && v >= minPx && v <= maxPx);
+
+  return {
+    x: robustMedian(xValues, (minPx + maxPx) / 2),
+    y: robustMedian(yValues, (minPx + maxPx) / 2)
+  };
+}
+
+function robustMedian(values, fallback) {
+  if (!values.length) return fallback;
+  values.sort((a,b)=>a-b);
+  return values[Math.floor(values.length / 2)];
+}
+
+function chooseAxisPixelSize(profile, fullStart, fullEnd, activeStart, activeEnd, hint, options) {
+  const minPx = Math.max(2, options.minPixelSize || 4);
+  const maxPx = Math.max(minPx + 1, options.maxPixelSize || 64);
+
+  const searchMin = Number.isFinite(hint) ? Math.max(minPx, hint * 0.58) : minPx;
+  const searchMax = Number.isFinite(hint) ? Math.min(maxPx, hint * 1.62) : maxPx;
+
+  let best = { pixelSize: hint || (minPx + maxPx) / 2, score: Infinity };
+
+  for (let px = searchMin; px <= searchMax; px += 0.25) {
+    const phaseInfo = bestPhaseScoreRange(profile, activeStart, activeEnd, px);
+    const cuts = walkCutsFull(profile, fullStart, fullEnd, activeStart, activeEnd, px, activeStart + phaseInfo.phase, options.walkWindowRatio);
+
+    const gridScore = phaseInfo.score;
+    const regularity = computeCutRegularity(cuts);
+    const hintPenalty = Number.isFinite(hint) ? Math.abs(px - hint) / Math.max(1, hint) : 0;
+    const tooSmallPenalty = Number.isFinite(hint) && px < hint * 0.55 ? 2.0 : 0;
+
+    const score =
+      -gridScore * 0.45 +
+      regularity * 0.28 +
+      hintPenalty * 0.72 +
+      tooSmallPenalty +
+      (px < 5 ? 0.45 : px < 7 ? 0.18 : 0);
+
+    if (score < best.score) best = { pixelSize: px, score };
+  }
+
+  return best.pixelSize;
+}
+
+function runLengthPeriodEstimateAxis(imageData, bbox, axis, minPx, maxPx) {
+  const scores = new Float32Array(Math.ceil(maxPx * 4) + 8);
+  const w = imageData.width;
+  const d = imageData.data;
+  const x0 = bbox.x;
+  const y0 = bbox.y;
+  const x1 = bbox.x + bbox.w;
+  const y1 = bbox.y + bbox.h;
+
+  function addRunScore(length, weight) {
+    if (length < minPx * 0.55 || length > maxPx * 6) return;
+
+    for (let px = minPx; px <= maxPx; px += 0.25) {
+      const k = Math.max(1, Math.round(length / px));
+      const expected = k * px;
+      const rel = Math.abs(length - expected) / Math.max(1, px);
+
+      if (rel <= 0.26) {
+        const idx = Math.round(px * 4);
+        scores[idx] += weight * (1 - rel / 0.26) * Math.min(3, Math.sqrt(length / px));
+      }
+    }
+  }
+
+  if (axis === "x") {
+    const stepY = Math.max(1, Math.floor(bbox.h / 90));
+
+    for (let y = y0; y < y1; y += stepY) {
+      let lastKey = null;
+      let runStart = x0;
+
+      for (let x = x0; x < x1; x++) {
+        const i = (y * w + x) * 4;
+        const key = colorKey(d[i], d[i + 1], d[i + 2], 18);
+
+        if (lastKey === null) lastKey = key;
+
+        if (key !== lastKey) {
+          addRunScore(x - runStart, 1.0);
+          runStart = x;
+          lastKey = key;
+        }
+      }
+
+      addRunScore(x1 - runStart, 1.0);
+    }
+  } else {
+    const stepX = Math.max(1, Math.floor(bbox.w / 90));
+
+    for (let x = x0; x < x1; x += stepX) {
+      let lastKey = null;
+      let runStart = y0;
+
+      for (let y = y0; y < y1; y++) {
+        const i = (y * w + x) * 4;
+        const key = colorKey(d[i], d[i + 1], d[i + 2], 18);
+
+        if (lastKey === null) lastKey = key;
+
+        if (key !== lastKey) {
+          addRunScore(y - runStart, 1.0);
+          runStart = y;
+          lastKey = key;
+        }
+      }
+
+      addRunScore(y1 - runStart, 1.0);
+    }
+  }
+
+  let bestPx = NaN;
+  let bestScore = -Infinity;
+
+  for (let idx = Math.round(minPx * 4); idx <= Math.round(maxPx * 4); idx++) {
+    const px = idx / 4;
+    const smoothed =
+      (scores[idx - 2] || 0) * 0.2 +
+      (scores[idx - 1] || 0) * 0.5 +
+      scores[idx] +
+      (scores[idx + 1] || 0) * 0.5 +
+      (scores[idx + 2] || 0) * 0.2;
+
+    const tinyPenalty = px < 6 ? 0.55 : px < 8 ? 0.78 : 1.0;
+    const finalScore = smoothed * tinyPenalty;
+
+    if (finalScore > bestScore) {
+      bestScore = finalScore;
+      bestPx = px;
+    }
+  }
+
+  return bestScore > 0 ? bestPx : NaN;
+}
+
+function colorKey(r, g, b, bucket) {
+  return `${Math.round(r / bucket)},${Math.round(g / bucket)},${Math.round(b / bucket)}`;
+}
+
+function peakDistanceEstimate(profile, start, end, minPx, maxPx) {
+  const peaks = [];
+  const threshold = 0.20;
+
+  for (let i = Math.max(1, start + 1); i < Math.min(profile.length - 1, end - 1); i++) {
+    const v = profile[i];
+    if (v >= threshold && v >= profile[i - 1] && v >= profile[i + 1]) peaks.push(i);
+  }
+
+  const dists = [];
+  for (let i = 1; i < peaks.length; i++) {
+    const d = peaks[i] - peaks[i - 1];
+    if (d >= minPx && d <= maxPx) dists.push(d);
+  }
+
+  if (!dists.length) return NaN;
+  dists.sort((a,b)=>a-b);
+  return dists[Math.floor(dists.length / 2)];
+}
+
+function autocorrelationEstimate(profile, start, end, minPx, maxPx) {
+  let bestStep = NaN;
+  let bestScore = -Infinity;
+
+  for (let step = minPx; step <= maxPx; step += 0.25) {
+    let sum = 0;
+    let count = 0;
+    const offset = Math.round(step);
+
+    for (let i = start; i + offset < end; i++) {
+      sum += profile[i] * profile[i + offset];
+      count++;
+    }
+
+    if (!count) continue;
+
+    const score = sum / count;
+    if (score > bestScore) {
+      bestScore = score;
+      bestStep = step;
+    }
+  }
+
+  return bestStep;
+}
+
+function makeCutsFromPixelSizeXY(profiles, bbox, fullW, fullH, pixelSizeX, pixelSizeY, windowRatio) {
+  const xInfo = bestPhaseScoreRange(profiles.col, bbox.x, bbox.x + bbox.w, pixelSizeX);
+  const yInfo = bestPhaseScoreRange(profiles.row, bbox.y, bbox.y + bbox.h, pixelSizeY);
+
+  return {
+    x: walkCutsFull(profiles.col, 0, fullW, bbox.x, bbox.x + bbox.w, pixelSizeX, bbox.x + xInfo.phase, windowRatio),
+    y: walkCutsFull(profiles.row, 0, fullH, bbox.y, bbox.y + bbox.h, pixelSizeY, bbox.y + yInfo.phase, windowRatio)
+  };
+}
+
+function bestPhaseScoreRange(profile, start, end, step) {
+  const samples = Math.max(8, Math.min(36, Math.round(step * 3)));
+  let best = { phase: 0, score: -Infinity };
+
+  for (let s = 0; s < samples; s++) {
+    const phase = (s / samples) * step;
+    let sum = 0;
+    let count = 0;
+
+    for (let pos = start + phase; pos < end; pos += step) {
+      const p = Math.round(pos);
+      if (p <= start || p >= end - 1) continue;
+
+      let peak = 0;
+      for (let d = -2; d <= 2; d++) {
+        const idx = clampInt(p + d, 0, profile.length - 1);
+        if (profile[idx] > peak) peak = profile[idx];
+      }
+
+      sum += peak;
+      count++;
+    }
+
+    const score = sum / Math.max(1, count);
+    if (score > best.score) best = { phase, score };
+  }
+
+  return best;
+}
+
+function walkCutsFull(profile, fullStart, fullEnd, activeStart, activeEnd, step, anchor, windowRatio) {
+  const targets = buildRegularTargets(fullStart, fullEnd, step, anchor);
+  const window = Math.max(2, step * windowRatio);
+  const meanPeak = meanProfile(profile, activeStart, activeEnd);
+  const minConfidence = Math.max(0.16, meanPeak * 0.68);
+
+  const samples = [];
+
+  for (const target of targets) {
+    const canSnap = target >= activeStart - step && target <= activeEnd + step;
+    let pos = target;
+    let conf = 0;
+
+    if (canSnap) {
+      const searchStart = Math.max(fullStart + 1, Math.round(target - window));
+      const searchEnd = Math.min(fullEnd - 1, Math.round(target + window));
+
+      let bestPos = Math.round(target);
+      let bestVal = -Infinity;
+
+      for (let i = searchStart; i <= searchEnd; i++) {
+        const val =
+          profile[i] * 1.0 +
+          (profile[i - 1] || 0) * 0.32 +
+          (profile[i + 1] || 0) * 0.32 -
+          Math.abs(i - target) / Math.max(1, window) * 0.10;
+
+        if (val > bestVal) {
+          bestVal = val;
+          bestPos = i;
+        }
+      }
+
+      const dist = Math.abs(bestPos - target);
+      const maxSnapDist = Math.max(1, step * 0.28);
+
+      if (bestVal >= minConfidence && dist <= maxSnapDist) {
+        pos = bestPos;
+        conf = bestVal;
+      }
+    }
+
+    samples.push({
+      target,
+      pos,
+      conf,
+      offset: pos - target
+    });
+  }
+
+  const regularized = regularizeGridSamples(samples, step);
+  const cuts = [fullStart, ...regularized, fullEnd];
+  return sanitizeCutsRange(cuts, fullStart, fullEnd);
+}
+
+function buildRegularTargets(fullStart, fullEnd, step, anchor) {
+  const targets = [];
+  let first = anchor;
+
+  while (first - step > fullStart) first -= step;
+  while (first <= fullStart + 1) first += step;
+
+  for (let t = first; t < fullEnd - 1; t += step) {
+    targets.push(t);
+  }
+
+  return targets;
+}
+
+function regularizeGridSamples(samples, step) {
+  if (!samples.length) return [];
+
+  const strongOffsets = samples
+    .filter(s => s.conf > 0)
+    .map(s => ({ offset: s.offset, weight: Math.max(0.001, s.conf) }));
+
+  const globalOffset = strongOffsets.length ? weightedMedianOffset(strongOffsets) : 0;
+  const out = [];
+
+  for (let i = 0; i < samples.length; i++) {
+    const s = samples[i];
+    let localOffset = globalOffset;
+
+    // Dùng median 3-neighbor để tránh một line bị lệch riêng lẻ.
+    const near = [];
+    for (let k = Math.max(0, i - 1); k <= Math.min(samples.length - 1, i + 1); k++) {
+      if (samples[k].conf > 0) near.push(samples[k].offset);
+    }
+    if (near.length) localOffset = median(near);
+
+    let pos = s.target + localOffset;
+
+    // Chỉ dùng peak local nếu nó không lệch quá nhiều khỏi quỹ đạo lưới đều.
+    if (s.conf > 0 && Math.abs(s.pos - pos) <= Math.max(1, step * 0.18)) {
+      pos = s.pos;
+    }
+
+    out.push(Math.round(pos));
+  }
+
+  // Ép lại khoảng cách đều, tránh cộng dồn sai số.
+  const cleaned = [];
+  let prev = -Infinity;
+  const minGap = Math.max(1, Math.round(step * 0.58));
+  const maxGap = Math.max(minGap + 1, Math.round(step * 1.42));
+
+  for (let i = 0; i < out.length; i++) {
+    let v = out[i];
+
+    if (cleaned.length) {
+      const ideal = cleaned[cleaned.length - 1] + step;
+      if (v - cleaned[cleaned.length - 1] < minGap || v - cleaned[cleaned.length - 1] > maxGap) {
+        v = Math.round(ideal);
+      }
+    }
+
+    if (v > prev) {
+      cleaned.push(v);
+      prev = v;
+    }
+  }
+
+  return cleaned;
+}
+
+function weightedMedianOffset(items) {
+  const arr = items.slice().sort((a, b) => a.offset - b.offset);
+  const total = arr.reduce((s, it) => s + it.weight, 0);
+  let acc = 0;
+
+  for (const it of arr) {
+    acc += it.weight;
+    if (acc >= total / 2) return it.offset;
+  }
+
+  return arr.length ? arr[arr.length - 1].offset : 0;
+}
+
+function median(values) {
+  if (!values.length) return 0;
+  const arr = values.slice().sort((a, b) => a - b);
+  return arr[Math.floor(arr.length / 2)];
+}
+
+function computeCutRegularity(cuts) {
+  if (cuts.length < 3) return 1;
+
+  const gaps = [];
+  for (let i = 1; i < cuts.length; i++) gaps.push(cuts[i] - cuts[i - 1]);
+
+  const mean = gaps.reduce((a,b)=>a+b,0) / gaps.length;
+  if (!mean) return 1;
+
+  const variance = gaps.reduce((a,g)=>a + (g - mean) * (g - mean), 0) / gaps.length;
+  return Math.sqrt(variance) / mean;
+}
+
+function meanProfile(profile, start, end) {
+  let sum = 0;
+  let count = 0;
+
+  for (let i = Math.max(0, start); i < Math.min(profile.length, end); i++) {
+    sum += profile[i];
+    count++;
+  }
+
+  return sum / Math.max(1, count);
+}
+
+function sanitizeCutsRange(cuts, start, end) {
+  const sorted = Array.from(new Set(cuts.map(v => clampInt(Math.round(v), start, end)))).sort((a, b) => a - b);
+  if (sorted[0] !== start) sorted.unshift(start);
+  if (sorted[sorted.length - 1] !== end) sorted.push(end);
+
+  const out = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] > out[out.length - 1]) out.push(sorted[i]);
+  }
+
+  return out;
+}
+
+function computeProfiles(imageData, bbox) {
+  const w = imageData.width;
+  const h = imageData.height;
+  const d = imageData.data;
+
+  const col = new Float32Array(w);
+  const row = new Float32Array(h);
+
+  const x0 = bbox.x;
+  const y0 = bbox.y;
+  const x1 = bbox.x + bbox.w;
+  const y1 = bbox.y + bbox.h;
+
+  const stepY = Math.max(1, Math.floor(bbox.h / 240));
+  const stepX = Math.max(1, Math.floor(bbox.w / 240));
+
+  for (let x = Math.max(1, x0); x < x1; x++) {
+    let sum = 0;
+    let count = 0;
+
+    for (let y = y0; y < y1; y += stepY) {
+      const i = (y * w + x) * 4;
+      const j = (y * w + x - 1) * 4;
+      sum += rgbDiff(d, i, j);
+      count++;
+    }
+
+    col[x] = sum / Math.max(1, count);
+  }
+
+  for (let y = Math.max(1, y0); y < y1; y++) {
+    let sum = 0;
+    let count = 0;
+
+    for (let x = x0; x < x1; x += stepX) {
+      const i = (y * w + x) * 4;
+      const j = ((y - 1) * w + x) * 4;
+      sum += rgbDiff(d, i, j);
+      count++;
+    }
+
+    row[y] = sum / Math.max(1, count);
+  }
+
+  return {
+    col: normalizeArray(smoothArray(col, 1)),
+    row: normalizeArray(smoothArray(row, 1))
+  };
+}
+
+function resampleByCuts(imageData, xCuts, yCuts, sampler) {
+  const outW = xCuts.length - 1;
+  const outH = yCuts.length - 1;
+  const out = new Uint8ClampedArray(outW * outH * 4);
+  const src = imageData.data;
+  const sw = imageData.width;
+
+  for (let y = 0; y < outH; y++) {
+    for (let x = 0; x < outW; x++) {
+      const x0 = xCuts[x];
+      const x1 = xCuts[x + 1];
+      const y0 = yCuts[y];
+      const y1 = yCuts[y + 1];
+
+      let c;
+      if (sampler === "median") c = medianColor(src, sw, x0, y0, x1, y1);
+      else if (sampler === "average") c = averageColor(src, sw, x0, y0, x1, y1);
+      else if (sampler === "dominant") c = dominantColor(src, sw, x0, y0, x1, y1);
+      else c = centerDominantColor(src, sw, x0, y0, x1, y1);
+
+      const i = (y * outW + x) * 4;
+      out[i] = c.r;
+      out[i + 1] = c.g;
+      out[i + 2] = c.b;
+      out[i + 3] = c.a;
+    }
+  }
+
+  return new ImageData(out, outW, outH);
+}
+
+function reconstructionErrorByCuts(src, low, cuts, bbox, step = 3) {
+  const xMap = buildIndexMap(src.width, cuts.x);
+  const yMap = buildIndexMap(src.height, cuts.y);
+  const s = src.data;
+  const l = low.data;
+  const sw = src.width;
+  const lw = low.width;
+
+  let sum = 0;
+  let count = 0;
+
+  const x0 = bbox.x;
+  const y0 = bbox.y;
+  const x1 = bbox.x + bbox.w;
+  const y1 = bbox.y + bbox.h;
+
+  for (let y = y0; y < y1; y += step) {
+    const ly = yMap[y];
+    for (let x = x0; x < x1; x += step) {
+      const lx = xMap[x];
+      const si = (y * sw + x) * 4;
+      const li = (ly * lw + lx) * 4;
+      const dr = s[si] - l[li];
+      const dg = s[si + 1] - l[li + 1];
+      const db = s[si + 2] - l[li + 2];
+      sum += Math.sqrt(dr * dr + dg * dg + db * db) / 255;
+      count++;
+    }
+  }
+
+  return sum / Math.max(1, count);
+}
+
+function detailLossByCuts(src, low, cuts, bbox, step = 3) {
+  const xMap = buildIndexMap(src.width, cuts.x);
+  const yMap = buildIndexMap(src.height, cuts.y);
+  const s = src.data;
+  const l = low.data;
+  const sw = src.width;
+  const lw = low.width;
+
+  let sum = 0;
+  let count = 0;
+
+  const x0 = Math.max(1, bbox.x);
+  const y0 = Math.max(1, bbox.y);
+  const x1 = Math.min(src.width - 1, bbox.x + bbox.w);
+  const y1 = Math.min(src.height - 1, bbox.y + bbox.h);
+
+  for (let y = y0; y < y1; y += step) {
+    const ly = yMap[y];
+    const lyPrev = Math.max(0, ly - 1);
+
+    for (let x = x0; x < x1; x += step) {
+      const lx = xMap[x];
+      const lxPrev = Math.max(0, lx - 1);
+
+      const si = (y * sw + x) * 4;
+      const sil = (y * sw + x - 1) * 4;
+      const siu = ((y - 1) * sw + x) * 4;
+
+      const srcEdge = (rgbDiff(s, si, sil) + rgbDiff(s, si, siu)) / 510;
+
+      const li = (ly * lw + lx) * 4;
+      const lil = (ly * lw + lxPrev) * 4;
+      const liu = (lyPrev * lw + lx) * 4;
+
+      const lowEdge = Math.min(1, (rgbDiff(l, li, lil) + rgbDiff(l, li, liu)) / 510);
+      sum += Math.max(0, srcEdge - lowEdge);
+      count++;
+    }
+  }
+
+  return sum / Math.max(1, count);
+}
+
+function buildIndexMap(length, cuts) {
+  const map = new Int32Array(length);
+  let cell = 0;
+  for (let i = 0; i < length; i++) {
+    while (cell < cuts.length - 2 && i >= cuts[cell + 1]) cell++;
+    map[i] = cell;
+  }
+  return map;
+}
+
+function drawGridOverlay(src, cuts, bbox = null) {
+  overlayCanvas.width = src.width;
+  overlayCanvas.height = src.height;
+
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  overlayCtx.putImageData(src, 0, 0);
+
+  overlayCtx.save();
+  overlayCtx.globalAlpha = 0.85;
+  overlayCtx.lineWidth = 1;
+
+  if (bbox) {
+    overlayCtx.strokeStyle = "rgba(255,255,255,0.75)";
+    overlayCtx.lineWidth = 2;
+    overlayCtx.strokeRect(bbox.x + 0.5, bbox.y + 0.5, bbox.w, bbox.h);
+    overlayCtx.lineWidth = 1;
+  }
+
+  overlayCtx.strokeStyle = "rgba(255, 230, 80, 0.85)";
+  overlayCtx.beginPath();
+  for (const x of cuts.x) {
+    overlayCtx.moveTo(x + 0.5, bbox ? bbox.y : 0);
+    overlayCtx.lineTo(x + 0.5, bbox ? bbox.y + bbox.h : src.height);
+  }
+  overlayCtx.stroke();
+
+  overlayCtx.strokeStyle = "rgba(80, 210, 255, 0.85)";
+  overlayCtx.beginPath();
+  for (const y of cuts.y) {
+    overlayCtx.moveTo(bbox ? bbox.x : 0, y + 0.5);
+    overlayCtx.lineTo(bbox ? bbox.x + bbox.w : src.width, y + 0.5);
+  }
+  overlayCtx.stroke();
+
+  overlayCtx.restore();
+}
+
+/* ============================
+   Palette editor
+   ============================ */
+
+function cloneImageData(imageData) {
+  return new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+}
+
+function colorKeyExact(r, g, b, a = 255) {
+  return `${r},${g},${b},${a}`;
+}
+
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map(v => {
+    return Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0");
+  }).join("");
+}
+
+function hexToRgbObj(hex) {
+  const clean = String(hex).replace("#", "").trim();
+  if (clean.length !== 6) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(clean.slice(0, 2), 16),
+    g: parseInt(clean.slice(2, 4), 16),
+    b: parseInt(clean.slice(4, 6), 16)
+  };
+}
+
+function normalizeHexInput(value) {
+  let clean = String(value || "").trim().replace(/^#/, "");
+  clean = clean.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
+  return clean ? "#" + clean.toUpperCase() : "#";
+}
+
+function isValidHexColor(value) {
+  return /^#[0-9A-Fa-f]{6}$/.test(String(value || "").trim());
+}
+
+function extractPaletteEntries(imageData, maxRows = 512) {
+  const map = new Map();
+  const d = imageData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const key = colorKeyExact(d[i], d[i + 1], d[i + 2], d[i + 3]);
+    if (!map.has(key)) {
+      map.set(key, { key, r: d[i], g: d[i + 1], b: d[i + 2], a: d[i + 3], count: 0 });
+    }
+    map.get(key).count++;
+  }
+
+  return Array.from(map.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, maxRows);
+}
+
+function paletteSnapshot() {
+  return {
+    edits: Array.from(paletteEdits.entries()),
+    locks: Array.from(lockedPaletteKeys),
+    selected: selectedPaletteKey
+  };
+}
+
+function restorePaletteSnapshot(snapshot) {
+  paletteEdits = new Map(snapshot.edits || []);
+  lockedPaletteKeys = new Set(snapshot.locks || []);
+  selectedPaletteKey = snapshot.selected || null;
+
+  if (paletteBaseImageData) {
+    renderPaletteEditor(paletteBaseImageData);
+    applyPaletteEditsAndRender();
+    drawPreviewHoverOverlay();
+  }
+
+  updatePaletteHistoryButtons();
+}
+
+function pushPaletteHistory() {
+  paletteUndoStack.push(paletteSnapshot());
+  if (paletteUndoStack.length > 80) paletteUndoStack.shift();
+  paletteRedoStack = [];
+  updatePaletteHistoryButtons();
+}
+
+function undoPaletteChange() {
+  if (!paletteUndoStack.length) return;
+  paletteRedoStack.push(paletteSnapshot());
+  const snapshot = paletteUndoStack.pop();
+  restorePaletteSnapshot(snapshot);
+}
+
+function redoPaletteChange() {
+  if (!paletteRedoStack.length) return;
+  paletteUndoStack.push(paletteSnapshot());
+  const snapshot = paletteRedoStack.pop();
+  restorePaletteSnapshot(snapshot);
+}
+
+function updatePaletteHistoryButtons() {
+  const undo = $("paletteUndoButton");
+  const redo = $("paletteRedoButton");
+  if (undo) undo.disabled = !paletteUndoStack.length;
+  if (redo) redo.disabled = !paletteRedoStack.length;
+}
+
+function activePaletteKey() {
+  return hoveredPaletteKey || selectedPaletteKey;
+}
+
+function selectPaletteKey(key, shouldScroll = true) {
+  if (!key) return;
+
+  selectedPaletteKey = key;
+
+  const container = $("paletteEditor");
+  if (container) {
+    container.querySelectorAll(".palette-row").forEach(row => {
+      row.classList.toggle("selected", row.dataset.key === key);
+    });
+
+    const row = container.querySelector(`.palette-row[data-key="${CSS.escape(key)}"]`);
+    if (row && shouldScroll) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  drawPreviewHoverOverlay();
+}
+
+function clearPaletteSelection() {
+  selectedPaletteKey = null;
+  hoveredPaletteKey = null;
+
+  const container = $("paletteEditor");
+  if (container) {
+    container.querySelectorAll(".palette-row.selected").forEach(row => {
+      row.classList.remove("selected");
+    });
+  }
+
+  drawPreviewHoverOverlay();
+}
+
+function getPaletteKeyFromPreviewEvent(event) {
+  if (!paletteBaseImageData || !previewCanvas.width || !previewCanvas.height) return null;
+
+  const rect = previewCanvas.getBoundingClientRect();
+  const localX = (event.clientX - rect.left) * (previewCanvas.width / rect.width);
+  const localY = (event.clientY - rect.top) * (previewCanvas.height / rect.height);
+  const px = Math.floor(localX / DEFAULTS.previewScale);
+  const py = Math.floor(localY / DEFAULTS.previewScale);
+
+  if (px < 0 || py < 0 || px >= paletteBaseImageData.width || py >= paletteBaseImageData.height) {
+    return null;
+  }
+
+  const d = paletteBaseImageData.data;
+  const i = (py * paletteBaseImageData.width + px) * 4;
+  return colorKeyExact(d[i], d[i + 1], d[i + 2], d[i + 3]);
+}
+
+function setHoveredPaletteKey(key) {
+  hoveredPaletteKey = key || null;
+  drawPreviewHoverOverlay();
+}
+
+function clearPreviewHoverOverlay() {
+  hoveredPaletteKey = null;
+  drawPreviewHoverOverlay();
+}
+
+function drawPreviewHoverOverlay() {
+  if (!previewHoverCanvas || !previewCanvas) return;
+
+  previewHoverCanvas.width = previewCanvas.width;
+  previewHoverCanvas.height = previewCanvas.height;
+  previewHoverCtx.clearRect(0, 0, previewHoverCanvas.width, previewHoverCanvas.height);
+
+  const keyToShow = activePaletteKey();
+
+  if (!keyToShow || !paletteBaseImageData || !nativeImageData) {
+    previewHoverCanvas.style.display = "none";
+    $("previewHoverInfo").textContent =
+      "Đây là preview cuối cùng để xem output pixel-perfect sau khi chuẩn hóa về pixel vuông 1:1. Rê chuột trên preview hoặc palette để highlight màu; click vào preview để chọn màu trong palette.";
+    return;
+  }
+
+  previewHoverCanvas.style.display = "block";
+
+  const entry = paletteEntries.find(e => e.key === keyToShow);
+  const labelHex = entry ? rgbToHex(entry.r, entry.g, entry.b).toUpperCase() : "";
+  const d = paletteBaseImageData.data;
+  const w = paletteBaseImageData.width;
+  const h = paletteBaseImageData.height;
+  const scale = DEFAULTS.previewScale;
+
+  previewHoverCtx.fillStyle = "rgba(0, 0, 0, 0.42)";
+  previewHoverCtx.fillRect(0, 0, previewHoverCanvas.width, previewHoverCanvas.height);
+
+  let count = 0;
+  let firstColor = null;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const key = colorKeyExact(d[i], d[i + 1], d[i + 2], d[i + 3]);
+      if (key !== keyToShow) continue;
+
+      count++;
+      const editedHex = paletteEdits.get(key);
+      if (!firstColor) firstColor = editedHex || rgbToHex(d[i], d[i + 1], d[i + 2]).toUpperCase();
+
+      previewHoverCtx.clearRect(x * scale, y * scale, scale, scale);
+      previewHoverCtx.fillStyle = "rgba(255,255,255,0.18)";
+      previewHoverCtx.fillRect(x * scale, y * scale, scale, scale);
+      previewHoverCtx.strokeStyle = "rgba(255,255,255,0.92)";
+      previewHoverCtx.lineWidth = Math.max(1, Math.floor(scale / 8));
+      previewHoverCtx.strokeRect(x * scale + 0.5, y * scale + 0.5, Math.max(1, scale - 1), Math.max(1, scale - 1));
+    }
+  }
+
+  $("previewHoverInfo").textContent =
+    count > 0
+      ? `Đang highlight màu ${labelHex}${firstColor && firstColor !== labelHex ? ` → ${firstColor}` : ""}: xuất hiện ${count} pixel trên preview.`
+      : "Không tìm thấy vị trí của màu đang chọn trên preview.";
+}
+
+function renderPaletteEditor(imageData) {
+  const container = $("paletteEditor");
+  if (!container) return;
+
+  if (!imageData) {
+    container.innerHTML = `<div class="palette-empty">Chưa có màu. Bấm Auto Snap hoặc Process lại.</div>`;
+    return;
+  }
+
+  paletteEntries = extractPaletteEntries(imageData, 512);
+
+  if (!paletteEntries.length) {
+    container.innerHTML = `<div class="palette-empty">Không tìm thấy màu nào trong output.</div>`;
+    return;
+  }
+
+  const totalColors = countUniqueColors(imageData);
+  const note = totalColors > paletteEntries.length
+    ? `<div class="palette-empty">Đang hiển thị ${paletteEntries.length}/${totalColors} màu nhiều nhất. Giảm “Số lượng màu” nếu muốn dễ chỉnh hơn.</div>`
+    : "";
+
+  const rows = paletteEntries.map(entry => {
+    const originalHex = rgbToHex(entry.r, entry.g, entry.b);
+    const value = (paletteEdits.get(entry.key) || originalHex).toUpperCase();
+
+    return `
+      <div class="palette-row ${selectedPaletteKey === entry.key ? "selected" : ""}" data-key="${entry.key}">
+        <button class="palette-reset-one" type="button" title="Reset riêng màu này" data-key="${entry.key}" ${paletteEdits.has(entry.key) ? "" : "disabled"}>↺</button>
+        <button class="palette-lock-one ${lockedPaletteKeys.has(entry.key) ? "active" : ""}" type="button" title="Khóa màu này khi gộp màu" data-key="${entry.key}">${lockedPaletteKeys.has(entry.key) ? "🔒" : "🔓"}</button>
+        <input class="palette-color-input" type="color" value="${value}" data-key="${entry.key}" title="Đổi màu" />
+        <input class="palette-hex-input" type="text" value="${value}" data-key="${entry.key}" maxlength="7" spellcheck="false" />
+        <div class="palette-count">${entry.count}</div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = note + rows;
+
+  container.querySelectorAll(".palette-row").forEach(row => {
+    const key = row.dataset.key;
+    row.addEventListener("mouseenter", () => setHoveredPaletteKey(key));
+    row.addEventListener("mouseleave", () => clearPreviewHoverOverlay());
+    row.addEventListener("click", () => selectPaletteKey(key, false));
+  });
+
+  container.querySelectorAll(".palette-reset-one").forEach(button => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      resetSinglePaletteColor(event.currentTarget.dataset.key, event.currentTarget.closest(".palette-row"));
+    });
+  });
+
+  container.querySelectorAll(".palette-lock-one").forEach(button => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      togglePaletteLock(event.currentTarget.dataset.key, event.currentTarget.closest(".palette-row"));
+    });
+  });
+
+  container.querySelectorAll(".palette-color-input").forEach(input => {
+    input.addEventListener("focus", (event) => setHoveredPaletteKey(event.target.dataset.key));
+    input.addEventListener("blur", () => clearPreviewHoverOverlay());
+    input.addEventListener("input", (event) => {
+      updatePaletteColor(event.target.dataset.key, event.target.value, event.target.closest(".palette-row"));
+    });
+  });
+
+  container.querySelectorAll(".palette-hex-input").forEach(input => {
+    input.addEventListener("focus", (event) => setHoveredPaletteKey(event.target.dataset.key));
+    input.addEventListener("input", (event) => {
+      const normalized = normalizeHexInput(event.target.value);
+      event.target.value = normalized;
+
+      if (!isValidHexColor(normalized)) {
+        event.target.classList.add("invalid");
+        return;
+      }
+
+      event.target.classList.remove("invalid");
+      updatePaletteColor(event.target.dataset.key, normalized, event.target.closest(".palette-row"));
+    });
+
+    input.addEventListener("blur", (event) => {
+      if (!isValidHexColor(event.target.value)) {
+        const key = event.target.dataset.key;
+        const entry = paletteEntries.find(e => e.key === key);
+        const fallback = (paletteEdits.get(key) || (entry ? rgbToHex(entry.r, entry.g, entry.b) : "#000000")).toUpperCase();
+        event.target.value = fallback;
+        event.target.classList.remove("invalid");
+      }
+      clearPreviewHoverOverlay();
+    });
+  });
+}
+
+function updatePaletteColor(key, value, row) {
+  if (!key || !isValidHexColor(value)) return;
+
+  value = value.toUpperCase();
+  const entry = paletteEntries.find(e => e.key === key);
+  const originalHex = entry ? rgbToHex(entry.r, entry.g, entry.b).toUpperCase() : value;
+  const currentHex = (paletteEdits.get(key) || originalHex).toUpperCase();
+  if (value === currentHex) return;
+
+  pushPaletteHistory();
+
+  if (value === originalHex) {
+    paletteEdits.delete(key);
+  } else {
+    paletteEdits.set(key, value);
+  }
+
+  if (row) {
+    const colorInput = row.querySelector(".palette-color-input");
+    const hexInput = row.querySelector(".palette-hex-input");
+
+    if (colorInput && colorInput.value.toUpperCase() !== value) colorInput.value = value;
+    if (hexInput && hexInput.value.toUpperCase() !== value) {
+      hexInput.value = value;
+      hexInput.classList.remove("invalid");
+    }
+
+    const resetButton = row.querySelector(".palette-reset-one");
+    if (resetButton) resetButton.disabled = !paletteEdits.has(key);
+  }
+
+  applyPaletteEditsAndRender();
+}
+
+function togglePaletteLock(key, row) {
+  if (!key) return;
+  pushPaletteHistory();
+
+  if (lockedPaletteKeys.has(key)) {
+    lockedPaletteKeys.delete(key);
+  } else {
+    lockedPaletteKeys.add(key);
+  }
+
+  if (row) {
+    const lockButton = row.querySelector(".palette-lock-one");
+    if (lockButton) {
+      const active = lockedPaletteKeys.has(key);
+      lockButton.classList.toggle("active", active);
+      lockButton.textContent = active ? "🔒" : "🔓";
+    }
+  }
+  updatePaletteHistoryButtons();
+}
+
+function resetSinglePaletteColor(key, row) {
+  if (!key) return;
+
+  const entry = paletteEntries.find(e => e.key === key);
+  if (!entry) return;
+  if (!paletteEdits.has(key)) return;
+
+  pushPaletteHistory();
+
+  const originalHex = rgbToHex(entry.r, entry.g, entry.b).toUpperCase();
+  paletteEdits.delete(key);
+
+  if (row) {
+    const colorInput = row.querySelector(".palette-color-input");
+    const hexInput = row.querySelector(".palette-hex-input");
+    const resetButton = row.querySelector(".palette-reset-one");
+
+    if (colorInput) colorInput.value = originalHex;
+    if (hexInput) {
+      hexInput.value = originalHex;
+      hexInput.classList.remove("invalid");
+    }
+    if (resetButton) resetButton.disabled = true;
+  }
+
+  applyPaletteEditsAndRender();
+  if (activePaletteKey() === key) drawPreviewHoverOverlay();
+}
+
+function applyPaletteEditsAndRender() {
+  if (!paletteBaseImageData) return;
+
+  const base = paletteBaseImageData;
+  const out = new Uint8ClampedArray(base.data);
+  const replacementCache = new Map();
+
+  for (const [key, hex] of paletteEdits.entries()) {
+    replacementCache.set(key, hexToRgbObj(hex));
+  }
+
+  for (let i = 0; i < out.length; i += 4) {
+    const key = colorKeyExact(out[i], out[i + 1], out[i + 2], out[i + 3]);
+    const replacement = replacementCache.get(key);
+
+    if (replacement) {
+      out[i] = replacement.r;
+      out[i + 1] = replacement.g;
+      out[i + 2] = replacement.b;
+    }
+  }
+
+  nativeImageData = new ImageData(out, base.width, base.height);
+
+  nativeCanvas.width = nativeImageData.width;
+  nativeCanvas.height = nativeImageData.height;
+  nativeCtx.clearRect(0, 0, nativeCanvas.width, nativeCanvas.height);
+  nativeCtx.putImageData(nativeImageData, 0, 0);
+
+  drawPreviewNearest(nativeCanvas, previewCanvas, DEFAULTS.previewScale);
+  $("previewInfo").textContent = `${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}`;
+  drawPreviewHoverOverlay();
+}
+
+/* ============================
+   Color helpers
+   ============================ */
+
+function centerDominantColor(data, width, x0, y0, x1, y1) {
+  const buckets = new Map();
+  const bucketSize = 14;
+  const cx = (x0 + x1 - 1) / 2;
+  const cy = (y0 + y1 - 1) / 2;
+  const rx = Math.max(1, (x1 - x0) / 2);
+  const ry = Math.max(1, (y1 - y0) / 2);
+
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = (y * width + x) * 4;
+      const nx = (x - cx) / rx;
+      const ny = (y - cy) / ry;
+      const dist2 = nx * nx + ny * ny;
+      const w = 1 / (1 + dist2 * 2.5);
+
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      const key = `${Math.round(r / bucketSize)},${Math.round(g / bucketSize)},${Math.round(b / bucketSize)}`;
+
+      if (!buckets.has(key)) buckets.set(key, { w: 0, r: 0, g: 0, b: 0, a: 0 });
+      const item = buckets.get(key);
+      item.w += w;
+      item.r += r * w;
+      item.g += g * w;
+      item.b += b * w;
+      item.a += a * w;
+    }
+  }
+
+  let best = null;
+  for (const item of buckets.values()) if (!best || item.w > best.w) best = item;
+  if (!best) return { r: 0, g: 0, b: 0, a: 255 };
+
+  return {
+    r: Math.round(best.r / best.w),
+    g: Math.round(best.g / best.w),
+    b: Math.round(best.b / best.w),
+    a: Math.round(best.a / best.w)
+  };
+}
+
+function dominantColor(data, width, x0, y0, x1, y1) {
+  const buckets = new Map();
+  const bucketSize = 16;
+
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = (y * width + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      const key = `${Math.round(r / bucketSize)},${Math.round(g / bucketSize)},${Math.round(b / bucketSize)}`;
+
+      if (!buckets.has(key)) buckets.set(key, { count: 0, r: 0, g: 0, b: 0, a: 0 });
+      const item = buckets.get(key);
+      item.count++;
+      item.r += r; item.g += g; item.b += b; item.a += a;
+    }
+  }
+
+  let best = null;
+  for (const item of buckets.values()) if (!best || item.count > best.count) best = item;
+  if (!best) return { r: 0, g: 0, b: 0, a: 255 };
+
+  return {
+    r: Math.round(best.r / best.count),
+    g: Math.round(best.g / best.count),
+    b: Math.round(best.b / best.count),
+    a: Math.round(best.a / best.count)
+  };
+}
+
+function medianColor(data, width, x0, y0, x1, y1) {
+  const rs = [], gs = [], bs = [], as = [];
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = (y * width + x) * 4;
+      rs.push(data[i]); gs.push(data[i + 1]); bs.push(data[i + 2]); as.push(data[i + 3]);
+    }
+  }
+  rs.sort((a,b)=>a-b); gs.sort((a,b)=>a-b); bs.sort((a,b)=>a-b); as.sort((a,b)=>a-b);
+  const mid = Math.floor(rs.length / 2);
+  return { r: rs[mid] || 0, g: gs[mid] || 0, b: bs[mid] || 0, a: as[mid] ?? 255 };
+}
+
+function averageColor(data, width, x0, y0, x1, y1) {
+  let r=0, g=0, b=0, a=0, count=0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = (y * width + x) * 4;
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; a += data[i + 3];
+      count++;
+    }
+  }
+  return {
+    r: Math.round(r / count),
+    g: Math.round(g / count),
+    b: Math.round(b / count),
+    a: Math.round(a / count)
+  };
+}
+
+function mergeSimilarColors(imageData, threshold, lockedKeys = new Set()) {
+  const src = new Uint8ClampedArray(imageData.data);
+  const palette = [];
+
+  for (let i = 0; i < src.length; i += 4) {
+    const a = src[i + 3];
+    if (a === 0) continue;
+
+    const exactKey = colorKeyExact(src[i], src[i + 1], src[i + 2], src[i + 3]);
+    const color = [src[i], src[i + 1], src[i + 2]];
+
+    // Locked colors remain untouched and do not absorb other colors.
+    if (lockedKeys && lockedKeys.has(exactKey)) {
+      if (!palette.some(p => p.key === exactKey)) {
+        palette.push({ key: exactKey, color, locked: true });
+      }
+      continue;
+    }
+
+    let bestIndex = -1;
+    let bestDist = Infinity;
+
+    for (let p = 0; p < palette.length; p++) {
+      const base = palette[p];
+      if (base.locked) continue;
+
+      const dr = color[0] - base.color[0];
+      const dg = color[1] - base.color[1];
+      const db = color[2] - base.color[2];
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIndex = p;
+      }
+    }
+
+    if (bestIndex >= 0 && bestDist <= threshold) {
+      src[i] = palette[bestIndex].color[0];
+      src[i + 1] = palette[bestIndex].color[1];
+      src[i + 2] = palette[bestIndex].color[2];
+    } else {
+      palette.push({ key: exactKey, color, locked: false });
+    }
+  }
+
+  return new ImageData(src, imageData.width, imageData.height);
+}
+
+/* ============================
+   Quantization
+   ============================ */
+
+function quantizeKMeans(imageData, k = 16, returnSameIfSmall = false) {
+  const data = imageData.data;
+  const pixels = [];
+  const maxSamples = 24000;
+  const stride = Math.max(1, Math.floor((data.length / 4) / maxSamples));
+
+  for (let p = 0; p < data.length / 4; p += stride) {
+    const i = p * 4;
+    if (data[i + 3] === 0) continue;
+    pixels.push([data[i], data[i + 1], data[i + 2]]);
+  }
+
+  if (!pixels.length) return { imageData, palette: [] };
+
+  const unique = uniqueRgbList(pixels);
+  if (unique.length <= k && returnSameIfSmall) return { imageData, palette: unique };
+
+  let centers = [];
+  for (let i = 0; i < k; i++) centers.push(unique[Math.floor(i * unique.length / k)].slice());
+
+  for (let iter = 0; iter < 8; iter++) {
+    const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
+    for (const p of pixels) {
+      const idx = nearestCenterIndex(p, centers);
+      sums[idx][0] += p[0];
+      sums[idx][1] += p[1];
+      sums[idx][2] += p[2];
+      sums[idx][3]++;
+    }
+    for (let i = 0; i < k; i++) {
+      if (sums[i][3] > 0) {
+        centers[i] = [
+          Math.round(sums[i][0] / sums[i][3]),
+          Math.round(sums[i][1] / sums[i][3]),
+          Math.round(sums[i][2] / sums[i][3])
+        ];
+      }
+    }
+  }
+
+  const out = new Uint8ClampedArray(data);
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] === 0) continue;
+    const idx = nearestCenterIndex([out[i], out[i + 1], out[i + 2]], centers);
+    out[i] = centers[idx][0];
+    out[i + 1] = centers[idx][1];
+    out[i + 2] = centers[idx][2];
+  }
+
+  return { imageData: new ImageData(out, imageData.width, imageData.height), palette: centers };
+}
+
+function uniqueRgbList(pixels) {
+  const seen = new Set(), out = [];
+  for (const p of pixels) {
+    const key = `${p[0]},${p[1]},${p[2]}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function nearestCenterIndex(p, centers) {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < centers.length; i++) {
+    const c = centers[i];
+    const dr = p[0] - c[0], dg = p[1] - c[1], db = p[2] - c[2];
+    const d = dr * dr + dg * dg + db * db;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+/* ============================
+   Utility
+   ============================ */
+
+function detectForegroundBBox(imageData, bg, tolerance = 18) {
+  const attempts = [
+    Math.max(42, tolerance),
+    58,
+    76
+  ];
+
+  let best = null;
+
+  for (const tol of attempts) {
+    const bbox = detectForegroundBBoxWithBorderPalette(imageData, tol);
+    const areaRatio = (bbox.w * bbox.h) / (imageData.width * imageData.height);
+
+    if (!best || areaRatio < (best.w * best.h) / (imageData.width * imageData.height)) {
+      best = bbox;
+    }
+
+    // BBox hợp lý: không ăn gần hết canvas.
+    if (areaRatio < 0.72) return bbox;
+  }
+
+  return best || { x: 0, y: 0, w: imageData.width, h: imageData.height };
+}
+
+function detectForegroundBBoxWithBorderPalette(imageData, tolerance) {
+  const w = imageData.width;
+  const h = imageData.height;
+  const d = imageData.data;
+  const bgPalette = estimateBorderPalette(imageData, 8);
+
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const c = { r: d[i], g: d[i + 1], b: d[i + 2] };
+
+      if (!isNearPalette(c, bgPalette, tolerance)) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (maxX < 0) return { x: 0, y: 0, w, h };
+
+  const pad = 4;
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(w - 1, maxX + pad);
+  maxY = Math.min(h - 1, maxY + pad);
+
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function estimateBorderPalette(imageData, maxColors = 8) {
+  const w = imageData.width;
+  const h = imageData.height;
+  const d = imageData.data;
+  const band = Math.max(2, Math.round(Math.min(w, h) * 0.035));
+  const buckets = new Map();
+  const bucketSize = 18;
+
+  function add(x, y) {
+    const i = (y * w + x) * 4;
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const key = `${Math.round(r / bucketSize)},${Math.round(g / bucketSize)},${Math.round(b / bucketSize)}`;
+    if (!buckets.has(key)) buckets.set(key, { count: 0, r: 0, g: 0, b: 0 });
+    const item = buckets.get(key);
+    item.count++;
+    item.r += r;
+    item.g += g;
+    item.b += b;
+  }
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (x < band || y < band || x >= w - band || y >= h - band) add(x, y);
+    }
+  }
+
+  return Array.from(buckets.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, maxColors)
+    .map(item => ({
+      r: Math.round(item.r / item.count),
+      g: Math.round(item.g / item.count),
+      b: Math.round(item.b / item.count)
+    }));
+}
+
+function isNearPalette(color, palette, tolerance) {
+  for (const p of palette) {
+    if (colorDistance(color, p) <= tolerance) return true;
+  }
+  return false;
+}
+
+function estimateBackgroundFromCorners(imageData) {
+  const w = imageData.width, h = imageData.height, d = imageData.data;
+  const pts = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  let r=0,g=0,b=0;
+  for (const [x,y] of pts) {
+    const i = (y * w + x) * 4;
+    r += d[i]; g += d[i + 1]; b += d[i + 2];
+  }
+  return { r: Math.round(r/4), g: Math.round(g/4), b: Math.round(b/4) };
+}
+
+function colorDistance(a, b) {
+  const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function rgbDiff(data, i, j) {
+  const dr = data[i] - data[j], dg = data[i + 1] - data[j + 1], db = data[i + 2] - data[j + 2];
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function normalizeArray(arr) {
+  let max = 0;
+  for (const v of arr) if (v > max) max = v;
+  if (max <= 0) return arr;
+  const out = new Float32Array(arr.length);
+  for (let i = 0; i < arr.length; i++) out[i] = arr[i] / max;
+  return out;
+}
+
+function smoothArray(arr, radius = 1) {
+  const out = new Float32Array(arr.length);
+  for (let i = 0; i < arr.length; i++) {
+    let sum = 0, count = 0;
+    for (let j = i - radius; j <= i + radius; j++) {
+      if (j < 0 || j >= arr.length) continue;
+      sum += arr[j]; count++;
+    }
+    out[i] = sum / Math.max(1, count);
+  }
+  return out;
+}
+
+function clampInt(v, min, max) {
+  return v < min ? min : (v > max ? max : v);
+}
+
+function nearestBy(items, getter) {
+  let best = items[0], bestV = getter(best);
+  for (const item of items) {
+    const v = getter(item);
+    if (v < bestV) { best = item; bestV = v; }
+  }
+  return best;
+}
+
+function minBy(items, getter) {
+  let best = items[0], bestV = getter(best);
+  for (const item of items) {
+    const v = getter(item);
+    if (v < bestV) { best = item; bestV = v; }
+  }
+  return best;
+}
+
+function countUniqueColors(imageData) {
+  const set = new Set(), d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) set.add(`${d[i]},${d[i+1]},${d[i+2]},${d[i+3]}`);
+  return set.size;
+}
+
+function drawPreviewNearest(source, target, scale) {
+  target.width = source.width * scale;
+  target.height = source.height * scale;
+  const ctx = target.getContext("2d");
+  ctx.clearRect(0, 0, target.width, target.height);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(source, 0, 0, source.width, source.height, 0, 0, target.width, target.height);
+}
+
+function downloadCanvas(canvas, filename) {
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+</script>
+</body>
+</html>
