@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pixel Art Native Grid Snapper - Simple UI v37</title>
+  <title>Pixel Art Native Grid Snapper - Sidebar Tabs UI v45</title>
   <style>
     * { box-sizing: border-box; }
     :root {
+      --viewer-height:clamp(340px,52vh,520px);
       --bg:#060b16;
       --panel:rgba(14,24,43,.82);
       --panel2:#0a1427;
@@ -20,6 +21,11 @@
       --green2:#16a34a;
       --shadow:0 18px 50px rgba(0,0,0,.30);
       --radius:18px;
+      --radius-sm:12px;
+      --glass:linear-gradient(180deg, rgba(16,28,50,.88), rgba(9,18,34,.82));
+      --soft-blue:rgba(59,130,246,.16);
+      --soft-green:rgba(34,197,94,.14);
+      --soft-purple:rgba(124,58,237,.16);
     }
     body {
       margin:0;
@@ -43,12 +49,12 @@
     header p { margin:0; color:var(--muted); font-size:14px; line-height:1.45; }
     main {
       display:grid;
-      grid-template-columns:320px 1fr;
+      grid-template-columns:300px 1fr;
       gap:16px;
       padding:16px;
     }
     .panel,.card {
-      background:var(--panel);
+      background:var(--glass);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
@@ -85,7 +91,9 @@
       margin-top:7px;
       background:var(--blue);
     }
-    button:hover { background:var(--blue2); }
+    button:hover { background:var(--blue2); transform:translateY(-1px); }
+    button { transition:background .16s ease, transform .16s ease, box-shadow .16s ease, opacity .16s ease; }
+    button:active { transform:translateY(0); }
     button.green { background:var(--green); }
     button.green:hover { background:var(--green2); }
     button.secondary { background:#334155; }
@@ -95,6 +103,103 @@
       color:var(--muted);
       line-height:1.45;
       margin-top:6px;
+    }
+    .panel {
+      padding:16px;
+    }
+    .control {
+      margin-bottom:12px;
+      padding:12px;
+      border:1px solid rgba(114,140,185,.14);
+      border-radius:16px;
+      background:rgba(8,17,33,.28);
+    }
+    .control.compact-control {
+      padding-bottom:10px;
+    }
+    .control-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .control-head label,
+    .control-head .toggle-row {
+      margin:0;
+      flex:1;
+    }
+    .control-head .toggle-row {
+      justify-content:flex-start;
+    }
+    .help-toggle {
+      width:24px;
+      height:24px;
+      min-width:24px;
+      padding:0;
+      margin:0;
+      border-radius:999px;
+      border:1px solid rgba(96,165,250,.30);
+      background:rgba(37,99,235,.16);
+      color:#bfdbfe;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:900;
+      box-shadow:none;
+    }
+    .help-toggle:hover { background:rgba(37,99,235,.24); }
+    .help-panel {
+      display:none;
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(96,165,250,.18);
+      background:rgba(37,99,235,.08);
+      color:#bfdbfe;
+      font-size:12px;
+      line-height:1.5;
+    }
+    .help-panel.open {
+      display:block;
+    }
+    .panel-tabs {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:12px;
+      padding:6px;
+      border:1px solid rgba(114,140,185,.16);
+      border-radius:16px;
+      background:rgba(8,17,33,.38);
+    }
+    .panel-tab-button {
+      margin:0;
+      min-height:40px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:transparent;
+      color:#c8d7eb;
+      border:1px solid transparent;
+      font-size:13px;
+      font-weight:800;
+      box-shadow:none;
+    }
+    .panel-tab-button:hover {
+      background:rgba(59,130,246,.14);
+    }
+    .panel-tab-button.active {
+      background:linear-gradient(180deg, rgba(59,130,246,.98), rgba(37,99,235,.92));
+      color:#fff;
+      border-color:rgba(147,197,253,.35);
+      box-shadow:0 8px 20px rgba(37,99,235,.24);
+    }
+    .panel-tab-content {
+      display:none;
+    }
+    .panel-tab-content.active {
+      display:block;
     }
     .toggle-row {
       display:flex;
@@ -129,9 +234,6 @@
     .slider-input input[type="number"] {
       text-align:center;
     }
-    .slider-input.mini-gap {
-      margin-top:10px;
-    }
     .preview-stack {
       position:relative;
       display:inline-block;
@@ -152,6 +254,103 @@
       background-image:none !important;
       border-radius:8px;
     }
+    .preview-toolbar {
+      display:grid;
+      grid-template-columns:42px minmax(100px,1fr) 74px 42px 64px 64px;
+      gap:8px;
+      align-items:center;
+      margin-top:10px;
+      padding:8px;
+      border:1px solid rgba(114,140,185,.18);
+      border-radius:14px;
+      background:rgba(8,17,33,.58);
+    }
+    .preview-toolbar button {
+      margin-top:0;
+      min-height:36px;
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .preview-toolbar input[type="range"] {
+      height:30px;
+      padding:0;
+    }
+    .preview-toolbar input[type="number"] {
+      height:34px;
+      padding:6px 8px;
+      text-align:center;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .visual-card,
+    .preview-card {
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .visual-viewport {
+      position:relative;
+      width:100%;
+      height:var(--viewer-height);
+      min-height:0;
+      max-height:var(--viewer-height);
+      flex:0 0 var(--viewer-height);
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(114,140,185,.24);
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(59,130,246,.10), transparent 28%),
+        linear-gradient(180deg, rgba(7,13,26,.92), rgba(5,10,19,.96));
+    }
+    .visual-viewport canvas {
+      display:block;
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+    }
+    .preview-viewport {
+      position:relative;
+      width:100%;
+      height:var(--viewer-height);
+      min-height:0;
+      max-height:var(--viewer-height);
+      flex:0 0 var(--viewer-height);
+      overflow:hidden;
+      border:1px solid rgba(114,140,185,.24);
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(59,130,246,.13), transparent 28%),
+        linear-gradient(180deg, rgba(7,13,26,.92), rgba(5,10,19,.96));
+      cursor:crosshair;
+      touch-action:none;
+    }
+    .preview-viewport.grabbing { cursor:grabbing; }
+    .preview-stage {
+      position:absolute;
+      left:0;
+      top:0;
+      transform-origin:0 0;
+      will-change:transform;
+    }
+    .preview-stage .preview-stack {
+      max-width:none;
+    }
+    .preview-stage .preview-stack canvas {
+      max-width:none;
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+    }
+    .preview-ghost-info {
+      display:none;
+    }
+
     .compact-reset {
       margin-top:8px;
       min-height:36px;
@@ -232,6 +431,82 @@
       background:rgba(8,17,33,.72);
       border-radius:14px;
     }
+    .palette-summary {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      margin:0 0 8px;
+      padding:8px 10px;
+      border:1px solid rgba(96,165,250,.28);
+      background:rgba(37,99,235,.12);
+      border-radius:12px;
+      color:#dbeafe;
+      font-size:12px;
+      font-weight:760;
+      line-height:1.35;
+    }
+    .palette-summary span {
+      color:#93c5fd;
+      font-weight:850;
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+    }
+    .palette-stats {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+      margin:0 0 8px;
+    }
+    .palette-stat-card {
+      min-width:0;
+      padding:9px 10px;
+      border:1px solid rgba(114,140,185,.20);
+      border-radius:14px;
+      background:linear-gradient(180deg, rgba(15,31,57,.84), rgba(8,17,33,.72));
+    }
+    .palette-stat-card span {
+      display:block;
+      margin-bottom:4px;
+      color:#9fb0c7;
+      font-size:10px;
+      font-weight:780;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .palette-stat-card b {
+      display:block;
+      color:#f8fafc;
+      font-size:18px;
+      line-height:1;
+      font-variant-numeric:tabular-nums;
+    }
+    .palette-stat-card.primary {
+      border-color:rgba(96,165,250,.38);
+      background:linear-gradient(180deg, rgba(37,99,235,.22), rgba(8,17,33,.74));
+    }
+    .palette-stat-card.good {
+      border-color:rgba(34,197,94,.32);
+      background:linear-gradient(180deg, rgba(34,197,94,.16), rgba(8,17,33,.72));
+    }
+    .palette-stat-card.warn {
+      border-color:rgba(250,204,21,.28);
+      background:linear-gradient(180deg, rgba(250,204,21,.12), rgba(8,17,33,.72));
+    }
+    .palette-stats-note {
+      margin:0 0 8px;
+      padding:9px 10px;
+      color:#c7d2fe;
+      background:rgba(99,102,241,.10);
+      border:1px solid rgba(129,140,248,.20);
+      border-radius:13px;
+      font-size:12px;
+      line-height:1.45;
+    }
+
     .palette-empty {
       color:var(--muted);
       font-size:12px;
@@ -371,7 +646,7 @@
     .card {
       padding:16px;
       min-height:320px;
-      overflow:auto;
+      overflow:hidden;
     }
     .card h2 {
       margin:0 0 12px;
@@ -418,6 +693,10 @@
       .panel { position:static; }
       .workspace { grid-template-columns:1fr; }
       .actions-bar { grid-template-columns:1fr; }
+      .preview-toolbar { grid-template-columns:38px 1fr 68px 38px; }
+      .preview-toolbar #previewFitButton,
+      .preview-toolbar #previewActualButton { grid-column:span 2; }
+      .palette-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
     }
   </style>
 </head>
@@ -426,131 +705,162 @@
 <header>
   <h1>Pixel Art Native Grid Snapper</h1>
   <p>
-    Bản v37 giữ cơ chế lưới v32 và thêm điều chỉnh thủ công: tăng/giảm kích thước lưới, dịch lưới X/Y trực tiếp trên khung Lưới detect.
-    Cơ chế detect lưới: quantize để detect → edge profile → căn pha lưới đều theo pixel gốc → resample native pixel, giúp preview ít bị lệch so với mẫu gốc hơn.
+    Bản v45 giữ UI bên trái thành 2 tab, nhưng chuyển Palette Stats về tab Thông số; tab Chỉnh màu chỉ còn phần palette editor. Đồng thời click trái trên preview dùng để chọn màu, còn pan chỉ dùng chuột giữa.
+    Cơ chế detect lưới vẫn giữ nguyên: quantize để detect → edge profile → căn pha lưới đều theo pixel gốc → resample native pixel, giúp preview ít bị lệch so với mẫu gốc hơn.
   </p>
 </header>
 
 <main>
   <aside class="panel">
-    <div class="control">
-      <label>1. Chọn ảnh</label>
-      <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
-      <div class="hint">PNG / JPG / WEBP. Xử lý local trên trình duyệt.</div>
+    <div class="panel-tabs" role="tablist" aria-label="Điều khiển bên trái">
+      <button id="panelTabSettings" class="panel-tab-button active" type="button" role="tab" aria-selected="true" aria-controls="panelSettingsContent" data-panel-tab="settings">Thông số</button>
+      <button id="panelTabPalette" class="panel-tab-button" type="button" role="tab" aria-selected="false" aria-controls="panelPaletteContent" data-panel-tab="palette">Chỉnh màu</button>
     </div>
 
-    <div class="control">
-      <label>Kích thước output</label>
-      <div class="size-link-box">
-        <button id="aspectLockButton" class="aspect-lock active" type="button" title="Khóa tỉ lệ W/H">🔗</button>
-
-        <div class="size-field">
-          <div class="size-top">
-            <span>Width:</span>
-            <input id="targetWidth" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
-          </div>
-          <input id="targetWidthRange" type="range" min="0" max="1024" step="1" value="0" />
+    <div id="panelSettingsContent" class="panel-tab-content active" role="tabpanel" aria-labelledby="panelTabSettings" data-panel-content="settings">
+      <div class="control compact-control">
+        <div class="control-head">
+          <label>1. Chọn ảnh</label>
+          <button class="help-toggle" type="button" data-help-target="helpFileInput" aria-label="Xem mô tả Chọn ảnh">?</button>
         </div>
+        <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+        <div id="helpFileInput" class="help-panel">PNG / JPG / WEBP. Xử lý local trên trình duyệt.</div>
+      </div>
 
-        <div class="size-field">
-          <div class="size-top">
-            <span>Height:</span>
-            <input id="targetHeight" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+      <div class="control compact-control">
+        <div class="control-head">
+          <label>Kích thước output</label>
+          <button class="help-toggle" type="button" data-help-target="helpTargetSize" aria-label="Xem mô tả Kích thước output">?</button>
+        </div>
+        <div class="size-link-box">
+          <button id="aspectLockButton" class="aspect-lock active" type="button" title="Khóa tỉ lệ W/H">🔗</button>
+
+          <div class="size-field">
+            <div class="size-top">
+              <span>Width:</span>
+              <input id="targetWidth" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+            </div>
+            <input id="targetWidthRange" type="range" min="0" max="1024" step="1" value="0" />
           </div>
-          <input id="targetHeightRange" type="range" min="0" max="1024" step="1" value="0" />
+
+          <div class="size-field">
+            <div class="size-top">
+              <span>Height:</span>
+              <input id="targetHeight" type="number" min="0" max="1024" step="1" value="0" placeholder="Auto" />
+            </div>
+            <input id="targetHeightRange" type="range" min="0" max="1024" step="1" value="0" />
+          </div>
+        </div>
+        <div id="helpTargetSize" class="help-panel">
+          Có thể <b>nhập số trực tiếp</b> hoặc <b>kéo slider</b>. Bật icon link để giữ tỉ lệ như Photoshop.
+          <b>0 × 0</b> = auto detect và vẫn giữ đúng tỉ lệ ảnh gốc.
         </div>
       </div>
-      <div class="hint">
-        Có thể <b>nhập số trực tiếp</b> hoặc <b>kéo slider</b>. Bật icon link để giữ tỉ lệ như Photoshop.
-        <b>0 × 0</b> = auto detect và vẫn giữ đúng tỉ lệ ảnh gốc.
+
+      <div class="control compact-control">
+        <div class="control-head">
+          <label>Số lượng màu</label>
+          <button class="help-toggle" type="button" data-help-target="helpColorCount" aria-label="Xem mô tả Số lượng màu">?</button>
+        </div>
+        <div class="slider-input">
+          <input id="colorCountRange" type="range" min="0" max="72" step="1" value="0" />
+          <input id="colorCount" type="number" min="0" max="72" step="1" value="0" />
+        </div>
+        <div id="helpColorCount" class="help-panel">
+          Kéo hoặc nhập tay. <b>0</b> = giữ màu gốc. Tối đa 72 màu. Ví dụ: 12 / 24 / 48 / 72.
+        </div>
+      </div>
+
+      <div class="control compact-control">
+        <div class="control-head">
+          <label>Gộp màu gần nhau</label>
+          <button class="help-toggle" type="button" data-help-target="helpMergeStrength" aria-label="Xem mô tả Gộp màu gần nhau">?</button>
+        </div>
+        <div class="slider-input">
+          <input id="mergeStrengthRange" type="range" min="0" max="60" step="1" value="0" />
+          <input id="mergeStrength" type="number" min="0" max="120" step="1" value="0" />
+        </div>
+        <div id="helpMergeStrength" class="help-panel">
+          Kéo hoặc nhập tay. <b>0</b> = tắt. Giá trị càng cao thì các màu gần nhau càng bị gom mạnh.
+        </div>
+      </div>
+
+      <div class="control compact-control">
+        <div class="control-head">
+          <label class="toggle-row">
+            <input id="realtimePreviewToggle" type="checkbox" checked />
+            <span>Preview realtime</span>
+          </label>
+          <button class="help-toggle" type="button" data-help-target="helpRealtime" aria-label="Xem mô tả Preview realtime">?</button>
+        </div>
+        <div id="helpRealtime" class="help-panel">
+          Tự cập nhật preview khi chỉnh Width/Height, số lượng màu hoặc gộp màu. Tool có debounce nhẹ để tránh lag khi kéo thanh.
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label>Tổng quan bảng màu</label>
+          <button class="help-toggle" type="button" data-help-target="helpPaletteStats" aria-label="Xem mô tả tổng quan bảng màu">?</button>
+        </div>
+        <div id="paletteStatsPanel" class="palette-stats">
+          <div class="palette-stat-card primary"><span>Hiện tại</span><b id="paletteCurrentColors">0</b></div>
+          <div class="palette-stat-card"><span>Gốc</span><b id="paletteOriginalColors">0</b></div>
+          <div class="palette-stat-card good"><span>Đã chỉnh</span><b id="paletteEditedColors">0</b></div>
+          <div class="palette-stat-card warn"><span>Trùng sau đổi</span><b id="paletteMergedByEdit">0</b></div>
+          <div class="palette-stat-card"><span>Đang khóa</span><b id="paletteLockedColors">0</b></div>
+          <div class="palette-stat-card"><span>Đang hiển thị</span><b id="paletteVisibleColors">0</b></div>
+        </div>
+        <div id="paletteStatsNote" class="palette-stats-note">Chưa có palette. Bấm Auto Snap hoặc Process lại.</div>
+        <div id="helpPaletteStats" class="help-panel">
+          Đây là thống kê nhanh của palette hiện tại: số màu đang có, số màu gốc, số màu đã chỉnh, màu đang khóa và số màu đang hiển thị trong danh sách chỉnh màu.
+        </div>
+      </div>
+
+      <div class="control" style="margin-top:14px;">
+        <div class="control-head">
+          <label>Kết quả</label>
+          <button class="help-toggle" type="button" data-help-target="helpStatus" aria-label="Xem mô tả Kết quả">?</button>
+        </div>
+        <div id="status" class="status">Chưa có ảnh.</div>
+        <div id="helpStatus" class="help-panel">Khu vực này hiển thị thông tin output, kích thước native, số màu và các gợi ý xử lý nhanh.</div>
       </div>
     </div>
 
-    <div class="control">
-      <label>Chỉnh lưới detect thủ công</label>
-      <div class="slider-input">
-        <input id="gridScaleRange" type="range" min="50" max="150" step="1" value="100" />
-        <input id="gridScale" type="number" min="50" max="150" step="1" value="100" />
-      </div>
-      <div class="hint">Kích thước ô lưới: <b>100%</b> = giữ nguyên. Tăng lên = ô lớn hơn/ít ô hơn, giảm xuống = ô nhỏ hơn/nhiều ô hơn.</div>
-
-      <div class="slider-input mini-gap">
-        <input id="gridOffsetXRange" type="range" min="-64" max="64" step="1" value="0" />
-        <input id="gridOffsetX" type="number" min="-64" max="64" step="1" value="0" />
-      </div>
-      <div class="hint">Dịch lưới ngang X theo pixel nguồn.</div>
-
-      <div class="slider-input mini-gap">
-        <input id="gridOffsetYRange" type="range" min="-64" max="64" step="1" value="0" />
-        <input id="gridOffsetY" type="number" min="-64" max="64" step="1" value="0" />
-      </div>
-      <div class="hint">Dịch lưới dọc Y theo pixel nguồn.</div>
-
-      <button id="resetGridAdjustButton" class="secondary compact-reset" type="button">Reset lưới thủ công</button>
-    </div>
-
-    <div class="control">
-      <label>Số lượng màu</label>
-      <div class="slider-input">
-        <input id="colorCountRange" type="range" min="0" max="72" step="1" value="0" />
-        <input id="colorCount" type="number" min="0" max="72" step="1" value="0" />
-      </div>
-      <div class="hint">
-        Kéo hoặc nhập tay. <b>0</b> = giữ màu gốc. Tối đa 72 màu. Ví dụ: 12 / 24 / 48 / 72.
+    <div id="panelPaletteContent" class="panel-tab-content" role="tabpanel" aria-labelledby="panelTabPalette" data-panel-content="palette">
+      <div class="control">
+        <div class="control-head">
+          <label>Chỉnh màu từng màu</label>
+          <button class="help-toggle" type="button" data-help-target="helpPaletteEditor" aria-label="Xem mô tả Chỉnh màu từng màu">?</button>
+        </div>
+        <div id="paletteEditor" class="palette-editor">
+          <div class="palette-empty">Chưa có màu. Bấm Auto Snap hoặc Process lại.</div>
+        </div>
+        <div class="palette-tools">
+          <button id="paletteUndoButton" class="secondary compact-reset" type="button" disabled>Undo</button>
+          <button id="paletteRedoButton" class="secondary compact-reset" type="button" disabled>Redo</button>
+          <button id="resetPaletteButton" class="secondary compact-reset" type="button">Reset màu</button>
+        </div>
+        <div id="helpPaletteEditor" class="help-panel">
+          Sau khi xử lý, mỗi màu trong output sẽ xuất hiện ở đây. Click trái trên preview để chọn màu trong palette; nhấn chuột giữa để pan/di chuyển preview; icon khóa giúp bảo vệ màu khi dùng “Gộp màu gần nhau”.
+        </div>
       </div>
     </div>
-
-    <div class="control">
-      <label>Gộp màu gần nhau</label>
-      <div class="slider-input">
-        <input id="mergeStrengthRange" type="range" min="0" max="60" step="1" value="0" />
-        <input id="mergeStrength" type="number" min="0" max="120" step="1" value="0" />
-      </div>
-      <div class="hint">
-        Kéo hoặc nhập tay. <b>0</b> = tắt. Giá trị càng cao thì các màu gần nhau càng bị gom mạnh.
-      </div>
-    </div>
-
-    <div class="control">
-      <label class="toggle-row">
-        <input id="realtimePreviewToggle" type="checkbox" checked />
-        <span>Preview realtime</span>
-      </label>
-      <div class="hint">
-        Tự cập nhật preview khi chỉnh Width/Height, số lượng màu hoặc gộp màu. Tool có debounce nhẹ để tránh lag khi kéo thanh.
-      </div>
-    </div>
-
-    <div class="control">
-      <label>Chỉnh màu từng màu</label>
-      <div id="paletteEditor" class="palette-editor">
-        <div class="palette-empty">Chưa có màu. Bấm Auto Snap hoặc Process lại.</div>
-      </div>
-      <div class="palette-tools">
-        <button id="paletteUndoButton" class="secondary compact-reset" type="button" disabled>Undo</button>
-        <button id="paletteRedoButton" class="secondary compact-reset" type="button" disabled>Redo</button>
-        <button id="resetPaletteButton" class="secondary compact-reset" type="button">Reset màu</button>
-      </div>
-      <div class="hint">
-        Sau khi xử lý, mỗi màu trong output sẽ xuất hiện ở đây. Click preview để chọn màu trong palette; icon khóa giúp màu đó không bị gộp khi dùng “Gộp màu gần nhau”.
-      </div>
-    </div>
-
-    <div class="control" style="margin-top:14px;">
-      <label>Kết quả</label>
-      <div id="status" class="status">Chưa có ảnh.</div>
-    </div>
-  </aside>
+  </aside>  </aside>
 
   <section class="workspace">
-    <div class="card">
+    <div class="card visual-card">
       <h2>Ảnh gốc <span id="sourceInfo" class="small"></span></h2>
-      <canvas id="sourceCanvas"></canvas>
+      <div class="visual-viewport">
+        <canvas id="sourceCanvas"></canvas>
+      </div>
     </div>
 
-    <div class="card">
+    <div class="card visual-card">
       <h2>Lưới detect <span id="overlayInfo" class="small"></span></h2>
-      <canvas id="overlayCanvas"></canvas>
+      <div class="visual-viewport">
+        <canvas id="overlayCanvas"></canvas>
+      </div>
     </div>
 
     <div class="hidden">
@@ -558,15 +868,25 @@
       <canvas id="nativeCanvas"></canvas>
     </div>
 
-    <div class="card">
+    <div class="card preview-card">
       <h2>Preview pixel 1:1 <span id="previewInfo" class="small"></span></h2>
-      <div class="preview-stack">
-        <canvas id="previewCanvas"></canvas>
-        <canvas id="previewHoverCanvas" class="preview-overlay"></canvas>
+      <div id="previewViewport" class="preview-viewport">
+        <div id="previewStage" class="preview-stage">
+          <div class="preview-stack">
+            <canvas id="previewCanvas"></canvas>
+            <canvas id="previewHoverCanvas" class="preview-overlay"></canvas>
+          </div>
+        </div>
       </div>
-      <div id="previewHoverInfo" class="hint">
-        Đây là preview cuối cùng để xem output pixel-perfect sau khi chuẩn hóa về pixel vuông 1:1. Rê chuột trên preview hoặc palette để highlight màu; click vào preview để chọn màu trong palette.
+      <div class="preview-toolbar">
+        <button id="previewZoomOutButton" class="secondary" type="button">−</button>
+        <input id="previewZoomRange" type="range" min="25" max="800" step="5" value="100" />
+        <input id="previewZoomValue" type="number" min="25" max="800" step="5" value="100" title="Zoom %" />
+        <button id="previewZoomInButton" class="secondary" type="button">+</button>
+        <button id="previewFitButton" class="secondary" type="button">Fit</button>
+        <button id="previewActualButton" class="secondary" type="button">1:1</button>
       </div>
+      <div id="previewHoverInfo" class="preview-ghost-info"></div>
     </div>
 
     <div class="actions-bar">
@@ -587,6 +907,37 @@ const sourceFitCanvas = $("sourceFitCanvas");
 const nativeCanvas = $("nativeCanvas");
 const previewCanvas = $("previewCanvas");
 const previewHoverCanvas = $("previewHoverCanvas");
+const previewViewport = $("previewViewport");
+const previewStage = $("previewStage");
+
+document.querySelectorAll(".help-toggle[data-help-target]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const targetId = button.dataset.helpTarget;
+    const panel = $(targetId);
+    if (!panel) return;
+    const isOpen = panel.classList.contains("open");
+    document.querySelectorAll(".help-panel.open").forEach((item) => {
+      if (item !== panel) item.classList.remove("open");
+    });
+    panel.classList.toggle("open", !isOpen);
+  });
+});
+
+
+function setLeftPanelTab(tabName) {
+  document.querySelectorAll('.panel-tab-button').forEach((button) => {
+    const active = button.dataset.panelTab === tabName;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.panel-tab-content').forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.panelContent === tabName);
+  });
+}
+
+document.querySelectorAll('.panel-tab-button').forEach((button) => {
+  button.addEventListener('click', () => setLeftPanelTab(button.dataset.panelTab || 'settings'));
+});
 
 const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
 const overlayCtx = overlayCanvas.getContext("2d", { willReadFrequently: true });
@@ -609,12 +960,18 @@ let syncingTargetSize = false;
 let realtimePreviewEnabled = true;
 let realtimeTimer = null;
 let realtimePendingMode = "process";
-let baseCuts = null;
 let currentCuts = null;
 let currentPixelSize = 0;
 let currentPixelSizeX = 0;
 let currentPixelSizeY = 0;
 let currentBBox = null;
+let previewZoom = 1;
+let previewPanX = 0;
+let previewPanY = 0;
+let isPreviewPanning = false;
+let previewDidPan = false;
+let previewPanStart = { x: 0, y: 0, panX: 0, panY: 0 };
+let shouldFitPreviewAfterRender = false;
 
 function bindNumberAndRange(numberId, rangeId, options = {}) {
   const number = $(numberId);
@@ -647,9 +1004,6 @@ function bindNumberAndRange(numberId, rangeId, options = {}) {
 
 bindNumberAndRange("colorCount", "colorCountRange", { min: 0, max: 72, integer: true, defaultValue: 0 });
 bindNumberAndRange("mergeStrength", "mergeStrengthRange", { min: 0, max: 120, integer: true, defaultValue: 0 });
-bindNumberAndRange("gridScale", "gridScaleRange", { min: 50, max: 150, integer: true, defaultValue: 100 });
-bindNumberAndRange("gridOffsetX", "gridOffsetXRange", { min: -64, max: 64, integer: true, defaultValue: 0 });
-bindNumberAndRange("gridOffsetY", "gridOffsetYRange", { min: -64, max: 64, integer: true, defaultValue: 0 });
 
 $("aspectLockButton").addEventListener("click", () => {
   aspectLockEnabled = !aspectLockEnabled;
@@ -684,25 +1038,13 @@ $("colorCount").addEventListener("input", () => scheduleRealtimePreview("process
 $("colorCountRange").addEventListener("input", () => scheduleRealtimePreview("process"));
 $("mergeStrength").addEventListener("input", () => scheduleRealtimePreview("process"));
 $("mergeStrengthRange").addEventListener("input", () => scheduleRealtimePreview("process"));
-$("gridScale").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("gridScaleRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("gridOffsetX").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("gridOffsetXRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("gridOffsetY").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("gridOffsetYRange").addEventListener("input", () => scheduleRealtimePreview("adjust"));
-$("resetGridAdjustButton").addEventListener("click", () => {
-  $("gridScale").value = "100";
-  $("gridScaleRange").value = "100";
-  $("gridOffsetX").value = "0";
-  $("gridOffsetXRange").value = "0";
-  $("gridOffsetY").value = "0";
-  $("gridOffsetYRange").value = "0";
-  scheduleRealtimePreview("adjust", 40);
-});
 $("realtimePreviewToggle").addEventListener("change", (event) => {
   realtimePreviewEnabled = event.target.checked;
   if (realtimePreviewEnabled) scheduleRealtimePreview("grid", 40);
 });
+
+setupPreviewZoomPan();
+updatePreviewTransform();
 updateAspectLockButton();
 syncTargetSizeUI();
 
@@ -759,12 +1101,12 @@ $("fileInput").addEventListener("change", (e) => {
     renderPaletteEditor(null);
     updatePaletteHistoryButtons();
     clearPreviewHoverOverlay();
-    baseCuts = null;
     currentCuts = null;
     currentPixelSize = 0;
     currentPixelSizeX = 0;
     currentPixelSizeY = 0;
     currentBBox = null;
+    resetPreviewView();
 
     overlayCanvas.width = img.width;
     overlayCanvas.height = img.height;
@@ -803,11 +1145,10 @@ $("snapButton").addEventListener("click", () => {
     });
 
     quantizedImageData = result.quantized;
-    baseCuts = cloneCuts(result.cuts);
-    currentCuts = applyManualGridAdjustments(baseCuts);
+    currentCuts = result.cuts;
     currentPixelSize = result.pixelSize;
-    currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
-    currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
+    currentPixelSizeX = result.pixelSizeX;
+    currentPixelSizeY = result.pixelSizeY;
     currentBBox = result.bbox;
 
     drawGridOverlay(sourceImageData, currentCuts, currentBBox);
@@ -818,7 +1159,6 @@ $("snapButton").addEventListener("click", () => {
       `Pixel size X/Y: ${result.pixelSizeX.toFixed(2)} × ${result.pixelSizeY.toFixed(2)} px\n` +
       `Normalize ratio: ${result.normalizeRatio.toFixed(3)} → output pixel 1:1\n` +
       `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
-      `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
       `Giữ tỉ lệ ảnh gốc: ${aspectLockEnabled ? formatAspectFixInfo(result.aspectFix) : "Tắt"}\n` +
       `BBox detect: ${result.bbox.w}×${result.bbox.h} tại (${result.bbox.x}, ${result.bbox.y})\n` +
       `Step hint X/Y: ${result.stepHint.x.toFixed(2)} × ${result.stepHint.y.toFixed(2)} px\n` +
@@ -839,11 +1179,10 @@ $("processButton").addEventListener("click", () => {
   });
 
   quantizedImageData = result.quantized;
-  baseCuts = cloneCuts(result.cuts);
-  currentCuts = applyManualGridAdjustments(baseCuts);
+  currentCuts = result.cuts;
   currentPixelSize = result.pixelSize;
-  currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
-  currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
+  currentPixelSizeX = result.pixelSizeX;
+  currentPixelSizeY = result.pixelSizeY;
   currentBBox = result.bbox;
 
   drawGridOverlay(sourceImageData, currentCuts, currentBBox);
@@ -852,12 +1191,12 @@ $("processButton").addEventListener("click", () => {
 
 $("downloadNativeButton").addEventListener("click", () => {
   if (!nativeImageData) return alert("Chưa có output.");
-  downloadCanvas(nativeCanvas, "pixel-snap-native-simple-v37.png");
+  downloadCanvas(nativeCanvas, "pixel-snap-native-simple-v45.png");
 });
 
 $("downloadPreviewButton").addEventListener("click", () => {
   if (!nativeImageData) return alert("Chưa có preview.");
-  downloadCanvas(previewCanvas, "pixel-snap-preview-simple-v37.png");
+  downloadCanvas(previewCanvas, "pixel-snap-preview-simple-v45.png");
 });
 
 $("resetPaletteButton").addEventListener("click", () => {
@@ -873,6 +1212,7 @@ $("paletteUndoButton").addEventListener("click", undoPaletteChange);
 $("paletteRedoButton").addEventListener("click", redoPaletteChange);
 
 previewCanvas.addEventListener("mousemove", (event) => {
+  if (isPreviewPanning) return;
   const key = getPaletteKeyFromPreviewEvent(event);
   if (key) {
     setHoveredPaletteKey(key);
@@ -886,6 +1226,10 @@ previewCanvas.addEventListener("mouseleave", () => {
 });
 
 previewCanvas.addEventListener("click", (event) => {
+  if (previewDidPan) {
+    previewDidPan = false;
+    return;
+  }
   const key = getPaletteKeyFromPreviewEvent(event);
   if (!key) return;
   selectPaletteKey(key, true);
@@ -1044,11 +1388,9 @@ function resolveTargetSizeFromSource(src, targetWidth, targetHeight) {
 function scheduleRealtimePreview(mode = "process", delay = 220) {
   if (!realtimePreviewEnabled || !sourceImageData) return;
 
-  if (mode === "adjust") {
-    realtimePendingMode = "adjust";
-  } else if (mode === "grid" || !currentCuts) {
+  if (mode === "grid" || !currentCuts) {
     realtimePendingMode = "grid";
-  } else if (realtimePendingMode !== "grid" && realtimePendingMode !== "adjust") {
+  } else if (realtimePendingMode !== "grid") {
     realtimePendingMode = "process";
   }
 
@@ -1064,25 +1406,17 @@ function runRealtimePreview() {
   if (!realtimePreviewEnabled || !sourceImageData) return;
 
   try {
-    if (realtimePendingMode === "adjust" && baseCuts) {
-      updateGridFromManualAdjustments();
-      $("status").textContent =
-        `Preview realtime đã cập nhật theo chỉnh lưới\n` +
-        `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
-        `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
-        `Pixel size X/Y: ${currentPixelSizeX.toFixed(2)} × ${currentPixelSizeY.toFixed(2)} px`;
-    } else if (realtimePendingMode === "grid" || !currentCuts) {
+    if (realtimePendingMode === "grid" || !currentCuts) {
       const result = autoSnapGrid(sourceImageData, {
         ...DEFAULTS,
         ...readOptions()
       });
 
       quantizedImageData = result.quantized;
-      baseCuts = cloneCuts(result.cuts);
-      currentCuts = applyManualGridAdjustments(baseCuts);
+      currentCuts = result.cuts;
       currentPixelSize = result.pixelSize;
-      currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
-      currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
+      currentPixelSizeX = result.pixelSizeX;
+      currentPixelSizeY = result.pixelSizeY;
       currentBBox = result.bbox;
 
       drawGridOverlay(sourceImageData, currentCuts, currentBBox);
@@ -1092,7 +1426,6 @@ function runRealtimePreview() {
         `Preview realtime đã cập nhật\n` +
         `Output target: ${formatTargetSizeText()}\n` +
         `Output native: ${currentCuts.x.length - 1}×${currentCuts.y.length - 1}\n` +
-        `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
         `Giữ tỉ lệ ảnh gốc: ${aspectLockEnabled ? formatAspectFixInfo(result.aspectFix) : "Tắt"}\n` +
         `Số màu: ${Number($("colorCount").value) === 0 ? "giữ màu gốc" : $("colorCount").value}\n` +
         `Gộp màu gần nhau: ${mergeLabel()}`;
@@ -1110,69 +1443,6 @@ function runRealtimePreview() {
     console.error(error);
     $("status").textContent = "Preview realtime gặp lỗi. Hãy bấm Auto Snap hoặc Process lại để cập nhật thủ công.";
   }
-}
-
-function cloneCuts(cuts) {
-  return {
-    x: Array.from(cuts.x || []),
-    y: Array.from(cuts.y || [])
-  };
-}
-
-function clampManualGridNumber(id, min, max, fallback = 0) {
-  const el = $(id);
-  let v = Number(el.value);
-  if (!Number.isFinite(v)) v = fallback;
-  v = Math.round(Math.max(min, Math.min(max, v)));
-  el.value = String(v);
-  const range = $(id + "Range");
-  if (range) range.value = String(v);
-  return v;
-}
-
-function getManualGridAdjustments() {
-  return {
-    scale: clampManualGridNumber("gridScale", 50, 150, 100),
-    offsetX: clampManualGridNumber("gridOffsetX", -64, 64, 0),
-    offsetY: clampManualGridNumber("gridOffsetY", -64, 64, 0)
-  };
-}
-
-function applyManualGridAdjustments(cuts) {
-  if (!cuts || !sourceImageData) return cuts;
-
-  const adj = getManualGridAdjustments();
-  const factor = adj.scale / 100;
-
-  const baseW = Math.max(1, cuts.x.length - 1);
-  const baseH = Math.max(1, cuts.y.length - 1);
-
-  // Scale > 100 = ô nguồn lớn hơn = ít ô hơn.
-  // Scale < 100 = ô nguồn nhỏ hơn = nhiều ô hơn.
-  const outW = Math.max(1, Math.min(sourceImageData.width, Math.round(baseW / factor)));
-  const outH = Math.max(1, Math.min(sourceImageData.height, Math.round(baseH / factor)));
-
-  return {
-    x: makeFixedCountCuts(sourceImageData.width, outW, adj.offsetX),
-    y: makeFixedCountCuts(sourceImageData.height, outH, adj.offsetY)
-  };
-}
-
-function updateGridFromManualAdjustments() {
-  if (!sourceImageData || !baseCuts) return;
-
-  currentCuts = applyManualGridAdjustments(baseCuts);
-  currentPixelSizeX = sourceImageData.width / Math.max(1, currentCuts.x.length - 1);
-  currentPixelSizeY = sourceImageData.height / Math.max(1, currentCuts.y.length - 1);
-  currentPixelSize = (currentPixelSizeX + currentPixelSizeY) / 2;
-
-  drawGridOverlay(sourceImageData, currentCuts, currentBBox);
-  processWithCurrentCuts();
-}
-
-function manualGridAdjustLabel() {
-  const adj = getManualGridAdjustments();
-  return `${adj.scale}% · X ${adj.offsetX >= 0 ? "+" : ""}${adj.offsetX}px · Y ${adj.offsetY >= 0 ? "+" : ""}${adj.offsetY}px`;
 }
 
 function processWithCurrentCuts() {
@@ -1196,6 +1466,7 @@ function processWithCurrentCuts() {
   paletteRedoStack = [];
   selectedPaletteKey = null;
   hoveredPaletteKey = null;
+  shouldFitPreviewAfterRender = true;
   renderPaletteEditor(paletteBaseImageData);
   updatePaletteHistoryButtons();
   applyPaletteEditsAndRender();
@@ -1207,7 +1478,6 @@ function processWithCurrentCuts() {
   $("status").textContent =
     `Output target: ${formatTargetSizeText()}\n` +
     `Pixel size X/Y: ${currentPixelSizeX.toFixed(2)} × ${currentPixelSizeY.toFixed(2)} px\n` +
-    `Chỉnh lưới thủ công: ${manualGridAdjustLabel()}\n` +
     `Native output 1:1: ${nativeImageData.width}×${nativeImageData.height}\n` +
     `Output aspect: ${(nativeImageData.width / Math.max(1, nativeImageData.height)).toFixed(3)} / Source aspect: ${(sourceImageData.width / Math.max(1, sourceImageData.height)).toFixed(3)}\n` +
     `Grid align: lưới đều + căn pha theo edge profile\n` +
@@ -1215,7 +1485,8 @@ function processWithCurrentCuts() {
     `Unique colors: ${countUniqueColors(nativeImageData)}\n` +
     `Color setting: ${colorCount === 0 ? "Giữ màu gốc" : colorCount}\n` +
     `Merge similar colors: ${mergeLabel()}\n` +
-    `Editable palette colors: ${paletteEntries.length}\n` +
+    `Palette colors now: ${countUniqueColorsAfterPaletteEdits(paletteBaseImageData)}\n` +
+    `Editable palette rows: ${paletteEntries.length}\n` +
     `Locked colors for merge: ${lockedPaletteKeys.size}\n\n` +
     `Tip:\n` +
     `- Mất chi tiết → tăng W×H rồi Process lại.\n` +
@@ -2065,6 +2336,155 @@ function drawGridOverlay(src, cuts, bbox = null) {
   overlayCtx.restore();
 }
 
+
+/* ============================
+   Preview zoom / pan
+   ============================ */
+
+function setupPreviewZoomPan() {
+  const zoomRange = $("previewZoomRange");
+  const zoomValue = $("previewZoomValue");
+  const zoomOut = $("previewZoomOutButton");
+  const zoomIn = $("previewZoomInButton");
+  const fit = $("previewFitButton");
+  const actual = $("previewActualButton");
+
+  if (zoomRange) zoomRange.addEventListener("input", () => setPreviewZoom(Number(zoomRange.value) / 100));
+  if (zoomValue) zoomValue.addEventListener("input", () => setPreviewZoom(Number(zoomValue.value) / 100));
+  if (zoomOut) zoomOut.addEventListener("click", () => setPreviewZoom(previewZoom / 1.2));
+  if (zoomIn) zoomIn.addEventListener("click", () => setPreviewZoom(previewZoom * 1.2));
+  if (fit) fit.addEventListener("click", fitPreviewToViewport);
+  if (actual) actual.addEventListener("click", () => setActualPreviewZoom(true));
+
+  if (!previewViewport) return;
+
+  previewViewport.addEventListener("wheel", (event) => {
+    if (!previewCanvas.width || !previewCanvas.height) return;
+    event.preventDefault();
+    const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+    setPreviewZoom(previewZoom * factor, event.clientX, event.clientY);
+  }, { passive: false });
+
+  previewViewport.addEventListener("pointerdown", (event) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    isPreviewPanning = true;
+    previewDidPan = false;
+    previewPanStart = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: previewPanX,
+      panY: previewPanY
+    };
+    previewViewport.classList.add("grabbing");
+    previewViewport.setPointerCapture(event.pointerId);
+  });
+
+  previewViewport.addEventListener("mousedown", (event) => {
+    if (event.button === 1) {
+      event.preventDefault();
+    }
+  });
+
+  previewViewport.addEventListener("pointermove", (event) => {
+    if (!isPreviewPanning) return;
+    const dx = event.clientX - previewPanStart.x;
+    const dy = event.clientY - previewPanStart.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) previewDidPan = true;
+    previewPanX = previewPanStart.panX + dx;
+    previewPanY = previewPanStart.panY + dy;
+    updatePreviewTransform();
+  });
+
+  function stopPan(event) {
+    if (!isPreviewPanning) return;
+    isPreviewPanning = false;
+    previewViewport.classList.remove("grabbing");
+    try { previewViewport.releasePointerCapture(event.pointerId); } catch (error) {}
+    setTimeout(() => { previewDidPan = false; }, 0);
+  }
+
+  previewViewport.addEventListener("pointerup", stopPan);
+  previewViewport.addEventListener("pointercancel", stopPan);
+  previewViewport.addEventListener("pointerleave", (event) => {
+    if (isPreviewPanning && event.buttons === 0) stopPan(event);
+  });
+
+  window.addEventListener("resize", () => {
+    if (shouldFitPreviewAfterRender) fitPreviewToViewport();
+  });
+}
+
+function clampPreviewZoom(value) {
+  let v = Number(value);
+  if (!Number.isFinite(v) || v <= 0) v = 1;
+  return Math.max(0.25, Math.min(8, v));
+}
+
+function setPreviewZoom(value, anchorClientX = null, anchorClientY = null) {
+  const oldZoom = previewZoom;
+  const nextZoom = clampPreviewZoom(value);
+
+  if (anchorClientX !== null && anchorClientY !== null && previewViewport) {
+    const rect = previewViewport.getBoundingClientRect();
+    const ax = anchorClientX - rect.left;
+    const ay = anchorClientY - rect.top;
+    const contentX = (ax - previewPanX) / Math.max(1e-6, oldZoom);
+    const contentY = (ay - previewPanY) / Math.max(1e-6, oldZoom);
+    previewPanX = ax - contentX * nextZoom;
+    previewPanY = ay - contentY * nextZoom;
+  }
+
+  previewZoom = nextZoom;
+  updatePreviewTransform();
+}
+
+function updatePreviewTransform() {
+  if (previewStage) {
+    previewStage.style.transform = `translate(${previewPanX}px, ${previewPanY}px) scale(${previewZoom})`;
+  }
+
+  const percent = Math.round(previewZoom * 100);
+  const range = $("previewZoomRange");
+  const value = $("previewZoomValue");
+  if (range) range.value = String(Math.max(Number(range.min), Math.min(Number(range.max), percent)));
+  if (value && document.activeElement !== value) value.value = String(percent);
+}
+
+function resetPreviewView() {
+  previewZoom = 1;
+  previewPanX = 0;
+  previewPanY = 0;
+  updatePreviewTransform();
+}
+
+function fitPreviewToViewport() {
+  if (!previewViewport || !previewCanvas.width || !previewCanvas.height) {
+    resetPreviewView();
+    return;
+  }
+
+  const vw = previewViewport.clientWidth;
+  const vh = previewViewport.clientHeight;
+  const cw = previewCanvas.width;
+  const ch = previewCanvas.height;
+
+  const fitZoom = clampPreviewZoom(Math.min(vw / Math.max(1, cw), vh / Math.max(1, ch)) * 0.94);
+  previewZoom = fitZoom;
+  previewPanX = Math.round((vw - cw * previewZoom) / 2);
+  previewPanY = Math.round((vh - ch * previewZoom) / 2);
+  updatePreviewTransform();
+}
+
+function setActualPreviewZoom(center = false) {
+  previewZoom = 1;
+  if (center && previewViewport && previewCanvas.width && previewCanvas.height) {
+    previewPanX = Math.round((previewViewport.clientWidth - previewCanvas.width) / 2);
+    previewPanY = Math.round((previewViewport.clientHeight - previewCanvas.height) / 2);
+  }
+  updatePreviewTransform();
+}
+
 /* ============================
    Palette editor
    ============================ */
@@ -2253,14 +2673,13 @@ function drawPreviewHoverOverlay() {
   previewHoverCanvas.style.display = "block";
 
   const entry = paletteEntries.find(e => e.key === keyToShow);
-  const labelHex = entry ? rgbToHex(entry.r, entry.g, entry.b).toUpperCase() : "";
+  const labelHex = entry ? currentHexForPaletteKey(entry.key) : "";
   const d = paletteBaseImageData.data;
   const w = paletteBaseImageData.width;
   const h = paletteBaseImageData.height;
   const scale = DEFAULTS.previewScale;
 
   let count = 0;
-  let firstColor = null;
   const lineW = Math.max(1, Math.floor(scale / 8));
 
   for (let y = 0; y < h; y++) {
@@ -2270,9 +2689,6 @@ function drawPreviewHoverOverlay() {
       if (key !== keyToShow) continue;
 
       count++;
-      const editedHex = paletteEdits.get(key);
-      if (!firstColor) firstColor = editedHex || rgbToHex(d[i], d[i + 1], d[i + 2]).toUpperCase();
-
       const px = x * scale;
       const py = y * scale;
 
@@ -2293,7 +2709,7 @@ function drawPreviewHoverOverlay() {
 
   $("previewHoverInfo").textContent =
     count > 0
-      ? `Đang highlight màu ${labelHex}${firstColor && firstColor !== labelHex ? ` → ${firstColor}` : ""}: xuất hiện ${count} pixel trên preview.`
+      ? `Đang highlight màu ${labelHex}: xuất hiện ${count} pixel trên preview.`
       : "Không tìm thấy vị trí của màu đang chọn trên preview.";
 }
 
@@ -2303,6 +2719,7 @@ function renderPaletteEditor(imageData) {
 
   if (!imageData) {
     container.innerHTML = `<div class="palette-empty">Chưa có màu. Bấm Auto Snap hoặc Process lại.</div>`;
+    updatePaletteSummary();
     return;
   }
 
@@ -2310,6 +2727,7 @@ function renderPaletteEditor(imageData) {
 
   if (!paletteEntries.length) {
     container.innerHTML = `<div class="palette-empty">Không tìm thấy màu nào trong output.</div>`;
+    updatePaletteSummary();
     return;
   }
 
@@ -2390,6 +2808,165 @@ function renderPaletteEditor(imageData) {
       clearPreviewHoverOverlay();
     });
   });
+
+  updatePaletteSummary();
+}
+
+function countUniqueColorsAfterPaletteEdits(imageData) {
+  if (!imageData) return 0;
+
+  const seen = new Set();
+  const d = imageData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const key = colorKeyExact(d[i], d[i + 1], d[i + 2], d[i + 3]);
+    const editedHex = paletteEdits.get(key);
+
+    if (editedHex && isValidHexColor(editedHex)) {
+      const rgb = hexToRgbObj(editedHex);
+      seen.add(colorKeyExact(rgb.r, rgb.g, rgb.b, d[i + 3]));
+    } else {
+      seen.add(key);
+    }
+  }
+
+  return seen.size;
+}
+
+function parseColorKeyExact(key) {
+  const parts = String(key || "").split(",").map(v => Number(v));
+  return {
+    r: clampInt(Math.round(parts[0] || 0), 0, 255),
+    g: clampInt(Math.round(parts[1] || 0), 0, 255),
+    b: clampInt(Math.round(parts[2] || 0), 0, 255),
+    a: clampInt(Math.round(parts[3] ?? 255), 0, 255)
+  };
+}
+
+function currentColorForPaletteKey(key) {
+  const base = parseColorKeyExact(key);
+  const editedHex = paletteEdits.get(key);
+
+  if (editedHex && isValidHexColor(editedHex)) {
+    const rgb = hexToRgbObj(editedHex);
+    return { r: rgb.r, g: rgb.g, b: rgb.b, a: base.a };
+  }
+
+  return base;
+}
+
+function currentHexForPaletteKey(key) {
+  const c = currentColorForPaletteKey(key);
+  return rgbToHex(c.r, c.g, c.b).toUpperCase();
+}
+
+function setPaletteEditToHex(originalKey, targetHex) {
+  const original = parseColorKeyExact(originalKey);
+  const originalHex = rgbToHex(original.r, original.g, original.b).toUpperCase();
+  const normalized = String(targetHex || originalHex).toUpperCase();
+
+  if (normalized === originalHex) {
+    paletteEdits.delete(originalKey);
+  } else {
+    paletteEdits.set(originalKey, normalized);
+  }
+}
+
+function getCurrentPaletteGroups(imageData = paletteBaseImageData) {
+  if (!imageData) return [];
+
+  const groups = new Map();
+  const d = imageData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const originalKey = colorKeyExact(d[i], d[i + 1], d[i + 2], d[i + 3]);
+    const c = currentColorForPaletteKey(originalKey);
+    const currentKey = colorKeyExact(c.r, c.g, c.b, c.a);
+
+    if (!groups.has(currentKey)) {
+      groups.set(currentKey, {
+        key: currentKey,
+        r: c.r,
+        g: c.g,
+        b: c.b,
+        a: c.a,
+        count: 0,
+        originCounts: new Map(),
+        originKeys: [],
+        locked: false
+      });
+    }
+
+    const group = groups.get(currentKey);
+    group.count++;
+    group.originCounts.set(originalKey, (group.originCounts.get(originalKey) || 0) + 1);
+  }
+
+  const out = Array.from(groups.values()).map(group => {
+    group.originKeys = Array.from(group.originCounts.keys());
+    group.locked = group.originKeys.some(key => lockedPaletteKeys.has(key));
+    return group;
+  });
+
+  out.sort((a, b) => b.count - a.count);
+  return out;
+}
+
+function colorDistanceRgb(a, b) {
+  const dr = a.r - b.r;
+  const dg = a.g - b.g;
+  const db = a.b - b.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function updatePaletteSummary() {
+  const setText = (id, value) => {
+    const el = $(id);
+    if (el) el.textContent = String(value);
+  };
+
+  if (!paletteBaseImageData || !paletteEntries.length) {
+    setText("paletteCurrentColors", 0);
+    setText("paletteOriginalColors", 0);
+    setText("paletteEditedColors", 0);
+    setText("paletteMergedByEdit", 0);
+    setText("paletteLockedColors", 0);
+    setText("paletteVisibleColors", 0);
+    const note = $("paletteStatsNote");
+    if (note) note.textContent = "Chưa có palette. Bấm Auto Snap hoặc Process lại.";
+    return;
+  }
+
+  const originalTotal = countUniqueColors(paletteBaseImageData);
+  const currentTotal = countUniqueColorsAfterPaletteEdits(paletteBaseImageData);
+  const editedTotal = paletteEdits.size;
+  const collapsedByEdits = Math.max(0, originalTotal - currentTotal);
+  const visibleTotal = paletteEntries.length;
+  const lockedTotal = lockedPaletteKeys.size;
+  const hiddenTotal = Math.max(0, originalTotal - visibleTotal);
+  const currentGroups = getCurrentPaletteGroups(paletteBaseImageData);
+  const dominant = currentGroups[0];
+  const dominantPct = dominant ? Math.round(dominant.count * 100 / Math.max(1, paletteBaseImageData.width * paletteBaseImageData.height)) : 0;
+
+  setText("paletteCurrentColors", currentTotal);
+  setText("paletteOriginalColors", originalTotal);
+  setText("paletteEditedColors", editedTotal);
+  setText("paletteMergedByEdit", collapsedByEdits);
+  setText("paletteLockedColors", lockedTotal);
+  setText("paletteVisibleColors", hiddenTotal > 0 ? `${visibleTotal}/${originalTotal}` : visibleTotal);
+
+  const note = $("paletteStatsNote");
+  if (note) {
+    const parts = [];
+    parts.push(`Palette hiện tại có ${currentTotal} màu${currentTotal !== originalTotal ? `, từ ${originalTotal} màu gốc` : ""}.`);
+    if (editedTotal) parts.push(`Đã chỉnh ${editedTotal} màu.`);
+    if (collapsedByEdits) parts.push(`Có ${collapsedByEdits} màu đang bị trùng/gộp sau chỉnh.`);
+    if (lockedTotal) parts.push(`${lockedTotal} màu đang được khóa.`);
+    if (hiddenTotal) parts.push(`Danh sách chỉ hiển thị ${visibleTotal}/${originalTotal} màu nhiều nhất.`);
+    if (dominant) parts.push(`Màu xuất hiện nhiều nhất: ${rgbToHex(dominant.r, dominant.g, dominant.b).toUpperCase()} (${dominantPct}%).`);
+    note.textContent = parts.join(" ");
+  }
+
 }
 
 function updatePaletteColor(key, value, row) {
@@ -2507,6 +3084,13 @@ function applyPaletteEditsAndRender() {
 
   drawPreviewNearest(nativeCanvas, previewCanvas, DEFAULTS.previewScale);
   $("previewInfo").textContent = `${nativeImageData.width * DEFAULTS.previewScale}×${nativeImageData.height * DEFAULTS.previewScale}`;
+  if (shouldFitPreviewAfterRender) {
+    requestAnimationFrame(() => fitPreviewToViewport());
+    shouldFitPreviewAfterRender = false;
+  } else {
+    updatePreviewTransform();
+  }
+  updatePaletteSummary();
   drawPreviewHoverOverlay();
 }
 
